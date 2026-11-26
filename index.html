@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🔫 星际射手 · 手机版</title>
+    <title>🔫 星际射手 </title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body {
@@ -79,15 +79,39 @@
         .upgrade-item span { color: #b7e1ff; }
         .upgrade-item .cost { color: #ffd966; font-weight: bold; }
         .back-btn { background: #6b3e3e; border-color: #a05a5a; width: 100%; margin-top: 10px; padding: 10px; font-size: 1rem;}
+
+        .corner-back {
+            position: absolute; top: 10px; left: 10px; z-index: 120;
+            background: #2e4b6e; border-color: #5f9bd1; padding: 6px 14px; font-size: 0.85rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        #gameBackBtn { position: absolute; top: 10px; left: 10px; z-index: 60; padding: 5px 12px; }
+        .death-stats { color: #b7e1ff; font-size: 1.05rem; margin: 8px 0 18px; text-align: center; line-height: 1.9; }
+        .death-stats b { color: #ffd966; }
+        .levelup-options { display: flex; gap: 14px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .levelup-card {
+            width: 180px; padding: 16px 12px; border-radius: 14px; background: #1e2b3a;
+            cursor: pointer; border: 2px solid #555; text-align: center;
+        }
+        .levelup-card:active { transform: scale(0.96); }
+        .levelup-card .r-name { font-size: 0.8rem; margin-bottom: 8px; letter-spacing: 3px; }
+        .levelup-card .a-name { font-size: 1.15rem; margin-bottom: 6px; color: #fff; font-weight: bold; }
+        .levelup-card .a-desc { font-size: 0.82rem; color: #b7e1ff; line-height: 1.5; }
+        .level-grid { display: flex; flex-wrap: wrap; gap: 8px; max-width: 460px; justify-content: center; margin-top: 12px; }
+        .level-cell {
+            width: 56px; height: 48px; border-radius: 9px; background: #1e2b3a;
+            border: 1px solid #3c6e9c; color: #b7e1ff; font-size: 0.95rem; font-weight: bold;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 0;
+        }
+        .level-cell .lvl-tag { font-size: 0.55rem; font-weight: normal; margin-top: 1px; }
+        .level-cell.locked { opacity: 0.35; cursor: not-allowed; }
+        .level-cell.boss { border-color: #a855f7; box-shadow: 0 0 6px #a855f755; }
+        .level-cell.big { border-color: #f59e0b; box-shadow: 0 0 8px #f59e0b66; }
+        .level-cell.rush { border-color: #ef4444; box-shadow: 0 0 10px #ef444466; }
         
         .pause-menu button { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 1rem; }
         .level-display { color: #ffd966; font-size: 1rem; }
-        
-        .pause-indicator {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem;
-            color: rgba(255,255,255,0.8); text-shadow: 0 0 20px #3f9eff; display: none; z-index: 50; pointer-events: none;
-        }
-        .pause-indicator.show { display: block; }
 
         .slider-group { margin-bottom: 12px; text-align: left; font-size: 0.9rem;}
         .slider-group label { display: block; color: #b7e1ff; margin-bottom: 5px; }
@@ -115,7 +139,7 @@
 <body>
 <div class="game-container">
     <canvas id="gameCanvas" width="800" height="550"></canvas>
-    <div class="pause-indicator" id="pauseIndicator">⏸</div>
+    <button id="gameBackBtn" class="corner-back">← 返回</button>
     
     <div class="status-bar">
         <div class="score-board">💥 <span id="scoreDisplay">0</span></div>
@@ -148,10 +172,35 @@
             <button id="upgradeBtn" style="flex:1; font-size: 0.9rem; padding: 8px 0;">⚡ 升级</button>
             <button id="difficultyBtn" style="flex:1; font-size: 0.9rem; padding: 8px 0; background: #6b3e3e;">⚙️ 难度</button>
         </div>
+        <!-- 账号登录/注册 -->
+        <div id="authPanel" style="width:100%; max-width:300px; margin-top:10px; border:1px solid #3c6e9c; border-radius:10px; padding:10px; background:rgba(15,26,36,0.6);">
+            <div id="authLoggedOut">
+                <div style="color:#ffd966; font-size:0.85rem; margin-bottom:6px;">👤 账号登录（登录后使用自己的存档）</div>
+                <input id="authUser" type="text" placeholder="账号（至少6位）" maxlength="20"
+                    style="width:100%; box-sizing:border-box; margin-bottom:6px; padding:7px 10px; background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; font-size:0.85rem;">
+                <input id="authPass" type="password" placeholder="密码（任意字符）" maxlength="30"
+                    style="width:100%; box-sizing:border-box; margin-bottom:8px; padding:7px 10px; background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; font-size:0.85rem;">
+                <button id="authLoginBtn" style="width:100%; padding:8px 0; font-size:0.9rem; background:#3c6e9c;">登录 / 注册新账号</button>
+                <div id="authMsg" style="color:#ff9d9d; font-size:0.75rem; margin-top:6px; min-height:1em;"></div>
+            </div>
+            <div id="authLoggedIn" style="display:none; text-align:center;">
+                <div style="color:#8fe3b0; font-size:0.9rem;">👤 当前账号：<b id="authUserName"></b></div>
+                <button id="authLogoutBtn" style="margin-top:8px; padding:5px 16px; font-size:0.8rem; background:#6b3e3e; border-color:#a05a5a;">退出登录（进度已自动保存）</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关卡选择界面 (冒险模式) -->
+    <div id="levelSelectOverlay" class="overlay hidden">
+        <button id="levelSelectBackBtn" class="corner-back">← 返回</button>
+        <h3 style="color:#ffd966;">🗺️ 冒险模式 · 关卡选择</h3>
+        <p style="color:#8fa8c9; font-size:0.78rem; margin-top:4px;">🕹=小Boss关 · 👑=大Boss关 · ⚔️=终局Boss连战</p>
+        <div id="levelGrid" class="level-grid"></div>
     </div>
 
     <!-- 升级界面 -->
     <div id="upgradeOverlay" class="overlay hidden">
+        <button id="upgradeBackBtn" class="corner-back">← 返回</button>
         <div class="upgrade-panel">
             <h3>⚡ 升级中心</h3>
             <div class="upgrade-stats">
@@ -165,17 +214,34 @@
 
     <!-- 暂停/设置菜单 -->
     <div id="pauseOverlay" class="overlay hidden">
+        <button id="pauseBackBtn" class="corner-back">← 返回</button>
         <div class="pause-menu">
             <h3>⏸ 游戏暂停</h3>
             <button id="resumeBtn">▶ 继续游戏</button>
             <button id="saveAndExitBtn" style="background:#3c6e9c;">💾 保存并退出</button>
-            <button id="settingsBtn" style="background:#6b3e3e;">⚙️ 设置 (ESC)</button>
+            <button id="pauseDifficultyBtn" style="background:#3c6e9c;">🎚️ 难度设置</button>
+            <button id="settingsBtn" style="background:#6b3e3e;">⚙️ 设置</button>
             <div id="settingsPanel" style="display:none;">
-                <label>🔊 音效音量 <input type="range" min="0" max="100" value="80"></label>
-                <label>🎵 背景音乐 <input type="range" min="0" max="100" value="50"></label>
-                <label>🖥️ 画质 <select style="background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; padding:4px;">
+                <button id="settingsBackBtn" style="background:#6b3e3e; border-color:#a05a5a; padding:4px 12px; font-size:0.8rem; margin-bottom:8px;">← 返回</button>
+                <label>🔊 音效音量 <input type="range" id="volumeSfx" min="0" max="100" value="80"></label>
+                <label>🎵 背景音乐 <input type="range" id="volumeMusic" min="0" max="100" value="50"></label>
+                <label>🖥️ 画质 <select id="qualitySelect" style="background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; padding:4px;">
                     <option>低</option><option selected>中</option><option>高</option>
                 </select></label>
+                <div style="border-top:1px solid #3c6e9c; margin-top:10px; padding-top:8px;">
+                    <div style="color:#ffd966; font-size:0.85rem; margin-bottom:6px;">⌨️ 键盘按键（点击后按新键）</div>
+                    <div id="keybindList" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;"></div>
+                    <div style="color:#ffd966; font-size:0.85rem; margin:10px 0 4px;">🖱️ 鼠标按键</div>
+                    <div style="font-size:0.8rem; color:#b7e1ff; display:flex; gap:12px; justify-content:center; align-items:center;">
+                        <span>攻击 <select id="mouseAttackSel" style="background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; padding:2px 6px;">
+                            <option value="0">左键</option><option value="1">中键</option><option value="2">右键</option>
+                        </select></span>
+                        <span>技能 <select id="mouseSkillSel" style="background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; padding:2px 6px;">
+                            <option value="0">左键</option><option value="1">中键</option><option value="2">右键</option>
+                        </select></span>
+                    </div>
+                    <button id="keybindResetBtn" style="margin-top:10px; padding:4px 12px; font-size:0.8rem; background:#6b3e3e; border-color:#a05a5a;">🔄 恢复默认按键</button>
+                </div>
             </div>
             <div class="save-slot-info" id="pauseSaveInfo" style="font-size:0.8rem; margin-top:10px; color:#b7e1ff;"></div>
         </div>
@@ -183,6 +249,7 @@
 
     <!-- 难度调节界面 -->
     <div id="difficultyOverlay" class="overlay hidden">
+        <button id="difficultyBackBtn" class="corner-back">← 返回</button>
         <div class="difficulty-panel">
             <h3>⚙️ 自定义难度</h3>
             <div class="slider-group">
@@ -216,6 +283,32 @@
             <button id="closeDifficultyBtn" class="back-btn">← 保存并返回</button>
         </div>
     </div>
+
+    <!-- 确认弹窗 -->
+    <div id="confirmOverlay" class="overlay hidden" style="z-index:150;">
+        <div class="pause-menu">
+            <h3 id="confirmMsg" style="font-size:1.1rem;">确定吗？</h3>
+            <button id="confirmYesBtn" style="background:#a04b4b;">✔ 确定</button>
+            <button id="confirmNoBtn" style="background:#3c6e9c;">✖ 取消</button>
+        </div>
+    </div>
+
+    <!-- 死亡/结算界面 -->
+    <div id="deathOverlay" class="overlay hidden">
+        <button id="deathBackBtn" class="corner-back">← 返回</button>
+        <h2 id="deathTitle">💀 你已坠机</h2>
+        <div class="death-stats" id="deathStats"></div>
+        <button id="deathContinueBtn" style="background:#2e8b57; padding:10px 30px; font-size:1rem; margin-bottom:10px; display:none;">🚀 继续挑战</button>
+        <button id="deathConfirmBtn" style="background:#3c6e9c; padding:10px 30px; font-size:1rem;">✔ 确认返回菜单</button>
+    </div>
+
+    <!-- 局内升级选择界面 -->
+    <div id="levelUpOverlay" class="overlay hidden">
+        <h3 style="color:#ffd966;">⬆️ 机体强化</h3>
+        <p style="color:#b7e1ff; font-size:0.9rem;">击坠达标！选择一项强化（仅当局有效）</p>
+        <div id="levelUpOptions" class="levelup-options"></div>
+        <p id="levelUpPity" style="color:#8fa8c9; font-size:0.75rem; margin-top:10px;"></p>
+    </div>
 </div>
 
 <script>
@@ -232,7 +325,14 @@
         const pauseBtn = document.getElementById('pauseBtn');
         const skillBtn = document.getElementById('skillBtn');
         const shieldChargesSpan = document.getElementById('shieldCharges');
-        const pauseIndicator = document.getElementById('pauseIndicator');
+        const confirmOverlay = document.getElementById('confirmOverlay');
+        const confirmMsg = document.getElementById('confirmMsg');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
+        const volumeSfx = document.getElementById('volumeSfx');
+        const volumeMusic = document.getElementById('volumeMusic');
+        const qualitySelect = document.getElementById('qualitySelect');
+        const pauseDifficultyBtn = document.getElementById('pauseDifficultyBtn');
         const startOverlay = document.getElementById('startOverlay');
         const upgradeOverlay = document.getElementById('upgradeOverlay');
         const pauseOverlay = document.getElementById('pauseOverlay');
@@ -253,6 +353,23 @@
         const settingsPanel = document.getElementById('settingsPanel');
         const saveInfo = document.getElementById('saveInfo');
         const pauseSaveInfo = document.getElementById('pauseSaveInfo');
+        const deathOverlay = document.getElementById('deathOverlay');
+        const deathTitle = document.getElementById('deathTitle');
+        const deathStats = document.getElementById('deathStats');
+        const deathConfirmBtn = document.getElementById('deathConfirmBtn');
+        const deathBackBtn = document.getElementById('deathBackBtn');
+        const upgradeBackBtn = document.getElementById('upgradeBackBtn');
+        const pauseBackBtn = document.getElementById('pauseBackBtn');
+        const difficultyBackBtn = document.getElementById('difficultyBackBtn');
+        const settingsBackBtn = document.getElementById('settingsBackBtn');
+        const gameBackBtn = document.getElementById('gameBackBtn');
+        const deathContinueBtn = document.getElementById('deathContinueBtn');
+        const levelUpOverlay = document.getElementById('levelUpOverlay');
+        const levelUpOptions = document.getElementById('levelUpOptions');
+        const levelUpPity = document.getElementById('levelUpPity');
+        const levelSelectOverlay = document.getElementById('levelSelectOverlay');
+        const levelGrid = document.getElementById('levelGrid');
+        const levelSelectBackBtn = document.getElementById('levelSelectBackBtn');
         
         // 难度控件
         const sliderSpawnRate = document.getElementById('sliderSpawnRate');
@@ -264,7 +381,93 @@
         const btnDoubleDifficulty = document.getElementById('btnDoubleDifficulty');
 
         const CW = 800, CH = 550;
-        const SAVE_KEY = 'interstellar_shooter_save_mobile';
+
+        // ===== 账号系统 =====
+        // 账号至少6位、密码任意；每个账号拥有独立的存档/水晶/升级/关卡解锁进度。
+        // 未登录时以"游客"身份游玩（数据独立保存在 _guest 命名空间）。
+        const ACCOUNTS_KEY = 'ss_accounts_v1';
+        const SESSION_KEY = 'ss_session_v1';
+        const SAVE_KEY_BASE = 'interstellar_shooter_save_mobile';
+        const UNLOCK_KEY_BASE = 'ss_adventure_unlock_v1';
+        let currentUser = null; // 当前登录账号名，null=游客
+
+        function hashPwd(s) { // 轻量混淆哈希（本地游戏，不联网传输）
+            let h = 5381;
+            for (let i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+            return 'h' + h.toString(36) + '_' + s.length;
+        }
+        function getAccounts() { try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}'); } catch(e) { return {}; } }
+        function saveAccounts(a) { try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)); } catch(e) {} }
+        function storageSuffix() { return currentUser ? '_' + currentUser : '_guest'; }
+        function saveKey() { return SAVE_KEY_BASE + storageSuffix(); }
+        function unlockKey() { return UNLOCK_KEY_BASE + storageSuffix(); }
+        function profileKey() { return 'ss_profile_v1' + storageSuffix(); }
+
+        // 长期进度档案：水晶 + 升级等级 + 冒险解锁进度（随关键节点自动保存）
+        function persistProfile() {
+            try {
+                localStorage.setItem(profileKey(), JSON.stringify({
+                    gems, upgradeLevels: { ...upgradeLevels }, unlock: loadUnlock()
+                }));
+            } catch(e) {}
+        }
+        function loadProfileIntoGame() {
+            try {
+                const p = JSON.parse(localStorage.getItem(profileKey()) || 'null');
+                if (p) {
+                    if (typeof p.gems === 'number') gems = p.gems;
+                    if (p.upgradeLevels) {
+                        upgradeLevels = { bulletCount: 1, spread: 1, fireRate: 1, life: 1, activeShieldDuration: 1, activeShieldCooldown: 1, damage: 1, ...p.upgradeLevels };
+                        for (const k in upgradeLevels) upgradeLevels[k] = Math.min(upgradeLevels[k], 20);
+                    }
+                    saveUnlock(p.unlock || 1);
+                } else {
+                    saveUnlock(1);
+                }
+            } catch(e) {}
+        }
+        function loginAccount(name, pwd) {
+            if (!name || name.length < 6) return '账号至少需要6位';
+            if (!pwd) return '密码不能为空';
+            const accounts = getAccounts();
+            if (accounts[name]) {
+                if (accounts[name].p !== hashPwd(pwd)) return '密码错误，请重试';
+            } else {
+                accounts[name] = { p: hashPwd(pwd) };
+                saveAccounts(accounts);
+            }
+            setCurrentUser(name);
+            return null; // 登录/注册成功
+        }
+        function setCurrentUser(name) {
+            currentUser = name;
+            try { name ? localStorage.setItem(SESSION_KEY, name) : localStorage.removeItem(SESSION_KEY); } catch(e) {}
+            loadProfileIntoGame(); // 载入该账号的长期进度
+            updateAuthUI(); updateSaveSlotUI(); updateUI();
+        }
+        function logoutAccount() {
+            persistProfile(); // 退出前保存当前账号进度
+            setCurrentUser(null);
+        }
+        function updateAuthUI() {
+            const out = document.getElementById('authLoggedOut');
+            const inEl = document.getElementById('authLoggedIn');
+            if (!out || !inEl) return;
+            out.style.display = currentUser ? 'none' : 'block';
+            inEl.style.display = currentUser ? 'block' : 'none';
+            if (currentUser) document.getElementById('authUserName').textContent = currentUser;
+            const msg = document.getElementById('authMsg');
+            if (msg) msg.textContent = '';
+        }
+        // 旧版无账号存档迁移到游客命名空间（仅首次）
+        function migrateOldSaves() {
+            try {
+                const oldSave = localStorage.getItem(SAVE_KEY_BASE);
+                if (oldSave && !localStorage.getItem(saveKey())) localStorage.setItem(saveKey(), oldSave);
+                const oldUnlock = localStorage.getItem(UNLOCK_KEY_BASE);
+                if (oldUnlock && !localStorage.getItem(unlockKey())) localStorage.setItem(unlockKey(), oldUnlock);
+            } catch(e) {}
+        }
 
         // 全局状态
         let score = 0, hp = 3, maxHp = 3, gems = 200;
@@ -278,6 +481,15 @@
         let bossSkillTriggers = { 80: false, 50: false, 20: false };
         let bossShieldTimer = 0;
 
+        // Boss 皮肤 (每一关不同，循环使用)
+        const BOSS_SKINS = [
+            { name: '暗影浮空堡', body: '#a855f7', glow: '#a855f7', eye: '#ff3b3b', pattern: 'horns' },
+            { name: '绯红巡洋舰', body: '#ef4444', glow: '#ef4444', eye: '#fde047', pattern: 'crown' },
+            { name: '翡翠母舰',   body: '#10b981', glow: '#10b981', eye: '#f43f5e', pattern: 'spikes' },
+            { name: '深渊之眼',   body: '#3b82f6', glow: '#3b82f6', eye: '#fbbf24', pattern: 'eye' },
+            { name: '圣殿裁决者', body: '#f59e0b', glow: '#f59e0b', eye: '#1f2937', pattern: 'halo' },
+        ];
+
         // 护盾系统
         const MAX_SHIELD_CHARGES = 2;
         let shieldCharges = 2;
@@ -290,17 +502,62 @@
             activeShieldDuration: 1, activeShieldCooldown: 1, damage: 1
         };
         const UPGRADE_CONFIG = [
-            { key: 'bulletCount', name: '📈 竖向弹幕', baseCost: 15, maxLevel: 100 },
-            { key: 'spread', name: '📐 横向散射', baseCost: 20, maxLevel: 100 },
-            { key: 'fireRate', name: '⚡ 攻击速度', baseCost: 25, maxLevel: 100 },
-            { key: 'life', name: '❤️ 生命上限', baseCost: 30, maxLevel: 100 },
-            { key: 'activeShieldDuration', name: '🛡️ 无敌时长', baseCost: 40, maxLevel: 100 },
-            { key: 'activeShieldCooldown', name: '⏱️ 技能冷却', baseCost: 40, maxLevel: 100 },
-            { key: 'damage', name: '💥 子弹伤害', baseCost: 35, maxLevel: 100 },
+            { key: 'bulletCount', name: '📈 竖向弹幕', baseCost: 20, maxLevel: 20 },
+            { key: 'spread', name: '📐 横向散射', baseCost: 20, maxLevel: 20 },
+            { key: 'fireRate', name: '⚡ 攻击速度', baseCost: 20, maxLevel: 20 },
+            { key: 'life', name: '❤️ 生命上限', baseCost: 20, maxLevel: 20 },
+            { key: 'activeShieldDuration', name: '🛡️ 无敌时长', baseCost: 20, maxLevel: 20 },
+            { key: 'activeShieldCooldown', name: '⏱️ 技能冷却', baseCost: 20, maxLevel: 20 },
+            { key: 'damage', name: '💥 子弹伤害', baseCost: 20, maxLevel: 20 },
         ];
 
         // 临时加成
         let tempUpgrades = { fireRate: 0, bulletCount: 0 };
+
+        // 局内升级系统 (仅当局有效)
+        let runKillCount = 0;      // 本局击坠数 (不因Boss重置)
+        let runUpgradeNeed = 20;   // 下次升级所需击坠数
+        let runUpgradePending = 0; // 待处理的升级次数
+        let runPity = 0;           // 紫橙保底概率加成
+        let runBonus = { damage: 0, fireRate: 0, maxHp: 0 };
+        let playerAura = { time: 0, color: '#fff' }; // 升级特效光环
+        let pendingVictoryGems = 0; // 通关结算待发放水晶
+
+        // Boss强化
+        let bossSummonTimer = 0;
+
+        // ===== 冒险模式关卡系统 =====
+        const TOTAL_LEVELS = 26;
+        // 第26关Boss连战顺序：四个小Boss + 大Boss
+        const RUSH_SEQUENCE = [
+            { kind: 'small', lvl: 5 }, { kind: 'small', lvl: 10 },
+            { kind: 'small', lvl: 15 }, { kind: 'small', lvl: 20 },
+            { kind: 'big', lvl: 25 },
+        ];
+        function getLevelType(lvl) {
+            if (lvl >= 26) return 'rush';
+            if (lvl === 25) return 'big';
+            if (lvl % 5 === 0) return 'small';
+            return 'normal';
+        }
+        function loadUnlock() {
+            try { return Math.max(1, Math.min(TOTAL_LEVELS, parseInt(localStorage.getItem(unlockKey()) || '1', 10) || 1)); }
+            catch(e) { return 1; }
+        }
+        function saveUnlock(v) {
+            try { localStorage.setItem(unlockKey(), String(Math.max(1, Math.min(TOTAL_LEVELS, v)))); } catch(e) {}
+        }
+
+        // 关卡内Boss状态
+        let miniBossSpawned = false; // 普通关的小小Boss是否已出现
+        let rushStarted = false, rushIndex = 0;
+        // 结算面板按钮行为
+        let continueAction = null, settleAction = null;
+
+        // 难度面板来源标记：是否从暂停菜单打开
+        let difficultyFromPause = false;
+        // 自定义确认弹窗回调
+        let confirmCallback = null;
 
         // 难度配置
         let difficulty = { 
@@ -322,16 +579,16 @@
         let touchTargetX = player.x + player.w/2;
 
         // 辅助函数
-        const getFireRateValue = () => 1.0 + (upgradeLevels.fireRate - 1) * 0.1 + tempUpgrades.fireRate * 0.1;
+        const getFireRateValue = () => 1.0 + (upgradeLevels.fireRate - 1) * 0.1 + tempUpgrades.fireRate * 0.1 + runBonus.fireRate * 0.1;
         const getFireCooldown = () => Math.max(2, Math.floor(60 / (getFireRateValue() * 6))); 
         const getActiveShieldDuration = () => Math.floor(300 + (upgradeLevels.activeShieldDuration - 1) * 12);
         const getActiveShieldCooldown = () => Math.max(60, Math.floor(1800 - (upgradeLevels.activeShieldCooldown - 1) * 12));
-        const getDamage = () => 1 + (upgradeLevels.damage - 1) * 0.5;
+        const getDamage = () => 1 + (upgradeLevels.damage - 1) * 0.5 + runBonus.damage;
         
         const getBulletCount = () => upgradeLevels.bulletCount + tempUpgrades.bulletCount;
         const getSpreadCount = () => upgradeLevels.spread;
-        const getMaxHp = () => 3 + (upgradeLevels.life - 1) * 1;
-        const getUpgradeCost = (config) => Math.floor(config.baseCost * (1 + (upgradeLevels[config.key] - 1) * 0.2));
+        const getMaxHp = () => 3 + (upgradeLevels.life - 1) * 1 + runBonus.maxHp;
+        const getUpgradeCost = (config) => config.baseCost + (upgradeLevels[config.key] - 1) * 10;
 
         const getDiffSpawn = () => difficulty.spawnRate * difficulty.multiplier;
         const getDiffSpeed = () => difficulty.enemySpeed * difficulty.multiplier;
@@ -342,8 +599,153 @@
         const getEnemyHp = () => Math.max(1, Math.floor((1 + (currentLevel - 1) * 2) * getDiffEnemyHp()));
         const getSpecialHp = () => Math.max(1, Math.floor((2 + (currentLevel - 1) * 2) * getDiffEnemyHp()));
 
+        // ===== 音频系统 (WebAudio, 无需外部文件) =====
+        let audioCtx = null;
+        let sfxVolume = 0.8, musicVolume = 0.5;
+        let musicNodes = null;
+        function ensureAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; }
+                startMusic();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, duration, type = 'square', vol = 1, freqEnd = null) {
+            if (!audioCtx || sfxVolume <= 0) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if (freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(vol * sfxVolume * 0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        const sfx = {
+            shoot:   () => playTone(880, 0.07, 'square', 0.5, 440),
+            explode: () => { playTone(150, 0.28, 'sawtooth', 0.9, 40); playTone(60, 0.35, 'triangle', 0.7, 30); },
+            hurt:    () => playTone(130, 0.35, 'sawtooth', 1, 50),
+            power:   () => { playTone(523, 0.1, 'sine', 0.8); setTimeout(() => playTone(784, 0.15, 'sine', 0.8), 80); },
+            upgrade: () => { playTone(659, 0.1, 'sine', 0.8); setTimeout(() => playTone(880, 0.15, 'sine', 0.8), 90); }
+        };
+        function startMusic() {
+            if (!audioCtx || musicNodes) return;
+            const master = audioCtx.createGain();
+            master.gain.value = musicVolume * 0.05;
+            master.connect(audioCtx.destination);
+            const notes = [110, 130.8, 146.8, 164.8]; // 太空氛围低音循环
+            let idx = 0;
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine'; osc.frequency.value = notes[0];
+            const lfo = audioCtx.createOscillator();
+            lfo.frequency.value = 0.1;
+            const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 3;
+            lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+            osc.connect(master); osc.start(); lfo.start();
+            const interval = setInterval(() => {
+                idx = (idx + 1) % notes.length;
+                osc.frequency.setValueAtTime(notes[idx], audioCtx.currentTime);
+            }, 2000);
+            musicNodes = { master, osc, lfo, interval };
+        }
+        function setMusicVolume(v) {
+            musicVolume = v;
+            if (musicNodes) musicNodes.master.gain.value = v * 0.05;
+        }
+
+        // ===== 画质系统 (星空背景 + 爆炸粒子) =====
+        const qualityCounts = { '低': { stars: 30, sparks: 60 }, '中': { stars: 80, sparks: 150 }, '高': { stars: 150, sparks: 300 } };
+        let qualitySetting = '中';
+        let stars = [], sparks = [];
+        function initStars() {
+            stars = [];
+            const n = qualityCounts[qualitySetting].stars;
+            for (let i = 0; i < n; i++) stars.push({ x: Math.random() * CW, y: Math.random() * CH, r: 0.5 + Math.random() * 1.5, sp: 0.2 + Math.random() * 0.8 });
+        }
+        function spawnSparks(x, y, color, count) {
+            const max = qualityCounts[qualitySetting].sparks;
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 3;
+                sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 20 + Math.random() * 20, color });
+            }
+            if (sparks.length > max) sparks.splice(0, sparks.length - max);
+        }
+
+        // 设置持久化
+        const SETTINGS_KEY = 'ss_settings_v1';
+        function saveSettings() {
+            try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ sfx: sfxVolume, music: musicVolume, quality: qualitySetting })); } catch(e) {}
+        }
+        function loadSettings() {
+            try {
+                const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+                if (s.sfx != null) sfxVolume = s.sfx;
+                if (s.music != null) musicVolume = s.music;
+                if (s.quality && qualityCounts[s.quality]) qualitySetting = s.quality;
+            } catch(e) {}
+        }
+
+        // ===== 按键自定义系统 =====
+        // 默认方案一（键盘）：A/D移动 J攻击 K技能 P暂停(全屏暂停菜单)
+        // 默认方案二（鼠标）：鼠标移动跟随 左键攻击 右键技能
+        let keyBinds = { left: 'a', right: 'd', attack: 'j', skill: 'k', pause: 'p' };
+        let mouseBinds = { attack: 0, skill: 2 }; // 0=左键 1=中键 2=右键
+        let lastMouseMoveFrame = -1e9; // 鼠标最近一次移动的帧号（用于鼠标跟随控制）
+        let rebindingAction = null;    // 正在等待改键的动作
+        const DEFAULT_KEYBINDS = { left: 'a', right: 'd', attack: 'j', skill: 'k', pause: 'p' };
+        const KEY_ACTION_NAMES = { left: '← 左移', right: '右移 →', attack: '攻击', skill: '技能', pause: '暂停' };
+        const KEYBIND_KEY = 'ss_keybinds_v1';
+        function keyLabel(k) {
+            if (k === ' ') return '空格';
+            if (k === 'arrowleft') return '方向键←';
+            if (k === 'arrowright') return '方向键→';
+            if (k === 'arrowup') return '方向键↑';
+            if (k === 'arrowdown') return '方向键↓';
+            if (k === 'escape') return 'ESC';
+            return k.toUpperCase();
+        }
+        function saveKeybinds() {
+            try { localStorage.setItem(KEYBIND_KEY, JSON.stringify({ keys: keyBinds, mouse: mouseBinds })); } catch(e) {}
+        }
+        function loadKeybinds() {
+            try {
+                const s = JSON.parse(localStorage.getItem(KEYBIND_KEY) || 'null');
+                if (s && s.keys) for (const k in keyBinds) if (s.keys[k]) keyBinds[k] = s.keys[k];
+                if (s && s.mouse) {
+                    if (s.mouse.attack != null) mouseBinds.attack = s.mouse.attack;
+                    if (s.mouse.skill != null) mouseBinds.skill = s.mouse.skill;
+                }
+            } catch(e) {}
+        }
+        function resetKeybinds() {
+            keyBinds = { ...DEFAULT_KEYBINDS };
+            mouseBinds = { attack: 0, skill: 2 };
+            saveKeybinds(); renderKeybindUI();
+        }
+        function renderKeybindUI() {
+            const list = document.getElementById('keybindList');
+            if (!list) return;
+            list.innerHTML = '';
+            for (const action in KEY_ACTION_NAMES) {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'padding:4px 8px; font-size:0.75rem; background:#1a2a3a; border-color:#3c6e9c;';
+                btn.textContent = rebindingAction === action
+                    ? '⌨️ 按任意键…'
+                    : `${KEY_ACTION_NAMES[action]}: ${keyLabel(keyBinds[action])}`;
+                btn.addEventListener('click', () => {
+                    rebindingAction = (rebindingAction === action) ? null : action;
+                    renderKeybindUI();
+                });
+                list.appendChild(btn);
+            }
+        }
+
         // UI更新
+        let uiDirty = false;
+        function requestUI() { uiDirty = true; }
         function updateUI() {
+            uiDirty = false;
             scoreSpan.textContent = score;
             let hearts = '';
             for (let i = 0; i < Math.min(hp, 10); i++) hearts += '❤️';
@@ -357,13 +759,12 @@
             progressBar.style.width = Math.min(100, (killCount / difficulty.bossThreshold) * 100) + '%';
             
             if (gameMode === 'adventure') {
-                levelDisplay.textContent = `第 ${currentLevel} / 5 关`;
+                levelDisplay.textContent = `第 ${currentLevel} / ${TOTAL_LEVELS} 关`;
             } else {
                 levelDisplay.textContent = `无限模式 · 关卡 ${currentLevel}`;
             }
             
             pauseBtn.textContent = paused ? '▶ 继续' : '⏸ 暂停';
-            pauseIndicator.classList.toggle('show', paused);
 
             shieldChargesSpan.textContent = `${shieldCharges}/${MAX_SHIELD_CHARGES}`;
             if (activeShieldCooldown > 0 && shieldCharges === 0) {
@@ -377,7 +778,7 @@
 
         // 存档
         function updateSaveSlotUI() {
-            const saved = localStorage.getItem(SAVE_KEY);
+            const saved = localStorage.getItem(saveKey());
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
@@ -403,15 +804,20 @@
                 bossShootTimer, bossMoveDirection, bossShieldTimer,
                 bossSkillTriggers: { ...bossSkillTriggers },
                 gameTime, playerX: player.x,
-                difficulty: { ...difficulty }
+                difficulty: { ...difficulty },
+                runKillCount, runUpgradeNeed, runPity,
+                runBonus: { ...runBonus },
+                bossSummonTimer,
+                miniBossSpawned, rushStarted, rushIndex
             };
-            localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+            localStorage.setItem(saveKey(), JSON.stringify(saveData));
+            persistProfile(); // 同步长期进度（水晶/升级/解锁）
             updateSaveSlotUI();
             return true;
         }
 
         function loadGame() {
-            const saved = localStorage.getItem(SAVE_KEY);
+            const saved = localStorage.getItem(saveKey());
             if (!saved) return false;
             try {
                 const data = JSON.parse(saved);
@@ -429,6 +835,23 @@
                 bossSkillTriggers = data.bossSkillTriggers || { 80: false, 50: false, 20: false };
                 gameTime = data.gameTime || 0; player.x = data.playerX || CW / 2;
                 difficulty = data.difficulty || { spawnRate: 1.0, enemySpeed: 1.0, enemyHp: 1.0, bossHp: 1.0, bossRate: 1.0, bossThreshold: 50, multiplier: 1.0 };
+                runKillCount = data.runKillCount || 0; runUpgradeNeed = data.runUpgradeNeed || 20;
+                runPity = data.runPity || 0;
+                runBonus = data.runBonus || { damage: 0, fireRate: 0, maxHp: 0 };
+                bossSummonTimer = data.bossSummonTimer || 240;
+                miniBossSpawned = data.miniBossSpawned || false;
+                rushStarted = data.rushStarted || false; rushIndex = data.rushIndex || 0;
+                hp = Math.min(hp, getMaxHp());
+                // 兼容旧存档/上限调整：升级等级钳制到20级
+                for (const k in upgradeLevels) upgradeLevels[k] = Math.min(upgradeLevels[k], 20);
+                // 兼容旧存档：补齐Boss新字段
+                if (boss) {
+                    boss.moveSpeed = boss.moveSpeed || 2;
+                    boss.skin = boss.skin || BOSS_SKINS[0];
+                    boss.summonTimer = boss.summonTimer || 240;
+                    boss.kind = boss.kind || 'small';
+                    boss.summoned50 = boss.summoned50 || false;
+                }
 
                 bullets = []; enemies = []; smallEnemies = []; enemyBullets = []; specialEnemies = []; powerups = [];
                 shootTimer = 0; enemySpawnTimer = 0; specialSpawnTimer = 120;
@@ -451,7 +874,8 @@
         }
 
         function clearSave() {
-            localStorage.removeItem(SAVE_KEY);
+            localStorage.removeItem(saveKey());
+            persistProfile(); // 局内进度没了，但水晶/升级等长期进度保留
             updateSaveSlotUI();
         }
 
@@ -473,6 +897,18 @@
             isTouching = false;
             tempUpgrades = { fireRate: 0, bulletCount: 0 };
 
+            // 重置局内升级系统
+            runKillCount = 0; runUpgradeNeed = 20; runUpgradePending = 0; runPity = 0;
+            runBonus = { damage: 0, fireRate: 0, maxHp: 0 };
+            playerAura = { time: 0, color: '#fff' };
+            pendingVictoryGems = 0;
+            bossSummonTimer = 0;
+            miniBossSpawned = false; rushStarted = false; rushIndex = 0;
+            continueAction = null; settleAction = null;
+            player.speed = 6;
+            deathContinueBtn.style.display = 'none';
+            deathConfirmBtn.textContent = '✔ 确认返回菜单';
+
             updateUI(); clearSave();
         }
 
@@ -485,7 +921,8 @@
                 x, y: -ENEMY_HEIGHT, w: ENEMY_WIDTH, h: ENEMY_HEIGHT,
                 speed: baseSpeed + Math.random() * 0.8,
                 hp: getEnemyHp(), maxHp: getEnemyHp(),
-                color: `hsl(${Math.floor(Math.random() * 20 + 350)}, 80%, 65%)`
+                color: `hsl(${Math.floor(Math.random() * 20 + 350)}, 80%, 65%)`,
+                seed: Math.random() * 10
             });
         }
 
@@ -500,7 +937,7 @@
             specialEnemies.push({
                 x, y: -ENEMY_HEIGHT, w: ENEMY_WIDTH, h: ENEMY_HEIGHT,
                 speed: (0.6 + Math.random() * 0.4) * getDiffSpeed(),
-                shootTimer: 60, shootCooldown: Math.max(60, 120 - Math.min(currentLevel * 5, 60)),
+                shootTimer: 45, shootCooldown: Math.max(45, 100 - Math.min(currentLevel * 5, 55)),
                 type: type, hp: getSpecialHp(), maxHp: getSpecialHp(),
                 color: type === 1 ? '#d97706' : type === 2 ? '#8b5cf6' : '#ec4899'
             });
@@ -508,6 +945,7 @@
 
         function shootBullet() {
             if (gameOver || !gameRunning || paused) return;
+            sfx.shoot();
             const bulletCount = getBulletCount();
             const spreadCount = getSpreadCount();
             const baseX = player.x + player.w / 2 - BULLET_WIDTH / 2;
@@ -532,6 +970,77 @@
             }
         }
 
+        // ===== 冒险模式关卡Boss体系 =====
+        // kind: 'mini'小小Boss(普通关中段) / 'small'小Boss(每5关) / 'big'大Boss(第25关)
+        function spawnLevelBoss(kind, lvl = currentLevel, isRush = false) {
+            bossActive = true;
+            let baseHp, sizeW = 120, sizeH = 80, skin;
+            if (kind === 'mini') {
+                baseHp = 80 + lvl * 40;
+                sizeW = 72; sizeH = 50;
+                const tierSkin = BOSS_SKINS[Math.floor(lvl / 5) % BOSS_SKINS.length];
+                skin = { ...tierSkin, name: `小小Boss · ${tierSkin.name}的手下` };
+            } else if (kind === 'small') {
+                baseHp = 300 * Math.pow(2, (lvl / 5 - 1));
+                skin = { ...BOSS_SKINS[(lvl / 5 - 1) % BOSS_SKINS.length], name: `小Boss · ${BOSS_SKINS[(lvl / 5 - 1) % BOSS_SKINS.length].name}` };
+            } else { // big
+                baseHp = 6000;
+                sizeW = 170; sizeH = 110;
+                skin = { name: '👑 大Boss · 终极主宰', body: '#e11d48', glow: '#fb7185', eye: '#fde047', pattern: 'crown' };
+            }
+            if (isRush) baseHp *= 0.6;
+            bossMaxHP = Math.floor(baseHp * getDiffBossHp());
+            bossHP = bossMaxHP;
+            bossShootTimer = Math.max(8, (50 - lvl * 2) / getDiffBossRate());
+            boss = {
+                x: CW/2 - sizeW/2, y: 30, w: sizeW, h: sizeH, color: skin.body,
+                skin, kind, isRush, rushLvl: lvl,
+                moveSpeed: 2 + Math.min(lvl * 0.12, 2.5),
+                summonTimer: 300, summoned50: false
+            };
+            bossSummonTimer = boss.summonTimer;
+            bossMoveDirection = 1;
+            bossShieldTimer = 0;
+            bossSkillTriggers = { 80: false, 50: false, 20: false };
+            spawnSparks(CW/2, 60, skin.glow, 30);
+        }
+
+        function spawnRushBoss() {
+            const seq = RUSH_SEQUENCE[rushIndex];
+            spawnLevelBoss(seq.kind, seq.lvl, true);
+        }
+
+        // 高一级Boss召唤低一级Boss作为小怪
+        function summonLowerBossMinion() {
+            if (!boss || !gameRunning || paused || gameOver) return;
+            let kind, lvl;
+            if (boss.kind === 'big') { kind = 'small'; lvl = 20; }
+            else if (boss.kind === 'small') { kind = 'mini'; lvl = boss.isRush ? boss.rushLvl : currentLevel; }
+            else return; // 小小Boss没有下级
+            spawnBossMinionEnemy(kind, lvl);
+        }
+
+        function spawnBossMinionEnemy(kind, lvl) {
+            let hpV, size, skin;
+            if (kind === 'small') {
+                hpV = 300 * Math.pow(2, (lvl / 5 - 1)) * 0.25;
+                size = 56;
+                skin = { ...BOSS_SKINS[(lvl / 5 - 1) % BOSS_SKINS.length] };
+            } else {
+                hpV = 80 + lvl * 20;
+                size = 46;
+                skin = { ...BOSS_SKINS[Math.floor(lvl / 5) % BOSS_SKINS.length] };
+            }
+            hpV = Math.max(10, Math.floor(hpV * getDiffBossHp()));
+            enemies.push({
+                x: Math.random() * (CW - size), y: -size, w: size, h: size,
+                speed: 0.8, hp: hpV, maxHp: hpV,
+                color: skin.body, bossMinion: true, skin, seed: Math.random() * 10
+            });
+            sfx.explode();
+            spawnSparks(CW/2, 100, skin.glow, 25);
+        }
+
         function rectCollide(r1, r2) {
             return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
         }
@@ -544,8 +1053,14 @@
             else baseHp = 200 * Math.pow(2, currentLevel - 1);
             bossMaxHP = Math.floor(baseHp * getDiffBossHp());
             bossHP = bossMaxHP;
-            bossShootTimer = Math.max(10, (70 - currentLevel * 8) / getDiffBossRate());
-            boss = { x: CW/2 - 60, y: 30, w: 120, h: 80, color: '#a855f7' };
+            bossShootTimer = Math.max(8, (50 - currentLevel * 6) / getDiffBossRate());
+            boss = {
+                x: CW/2 - 60, y: 30, w: 120, h: 80, color: '#a855f7',
+                skin: BOSS_SKINS[(currentLevel - 1) % BOSS_SKINS.length],
+                moveSpeed: 2 + Math.min(currentLevel * 0.15, 2.5), // 移速随关卡增强
+                summonTimer: 240
+            };
+            bossSummonTimer = boss.summonTimer;
             bossMoveDirection = 1;
             bossShieldTimer = 0;
             bossSkillTriggers = { 80: false, 50: false, 20: false };
@@ -553,7 +1068,8 @@
 
         function getBossShootCooldown() {
             const hpPercent = bossHP / bossMaxHP;
-            let baseCooldown = gameMode === 'endless' ? Math.max(8, 45 - currentLevel * 4) : Math.max(12, 55 - currentLevel * 7);
+            // 攻击频率提升：间隔缩短约 25%
+            let baseCooldown = gameMode === 'endless' ? Math.max(6, 34 - currentLevel * 3) : Math.max(9, 40 - currentLevel * 5);
             const healthFactor = 1 - (1 - hpPercent) * 0.5;
             return Math.max(4, baseCooldown * healthFactor / getDiffBossRate());
         }
@@ -564,44 +1080,77 @@
             const centerX = boss.x + boss.w / 2;
             const centerY = boss.y + boss.h;
 
+            // 索敌优化：弹幕始终朝向玩家所在的一侧释放
+            const dx = player.x + player.w/2 - centerX;
+            const dy = player.y + player.h/2 - centerY;
+            const baseAngle = Math.atan2(dy, dx);
+            const baseSpeed = 2.2 + currentLevel * 0.12;
+            // 弹幕间距保障：相邻子弹角间距至少 0.26rad，
+            // 在 300px 距离处空隙约 60px（子弹直径18px），飞机(36px宽)必定可穿越
+            const ANGLE_STEP = 0.26;
+
             if (mode === 0) {
-                const count = 4 + Math.min(currentLevel, 6);
+                // 朝玩家方向展开的扇形弹幕（间距按弹量自动扩展）
+                const count = 5 + Math.min(currentLevel, 7);
+                const spread = ANGLE_STEP * (count - 1) / 2;
                 for (let i = 0; i < count; i++) {
-                    const angle = (Math.PI / count) * i - Math.PI/2 + Math.PI/4;
-                    const vx = Math.cos(angle) * 2.5, vy = Math.sin(angle) * 2.5;
+                    const t = count === 1 ? 0 : (i / (count - 1)) * 2 - 1;
+                    const angle = baseAngle + t * spread;
+                    const vx = Math.cos(angle) * baseSpeed, vy = Math.sin(angle) * baseSpeed;
                     smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#c084fc' });
                 }
             } else if (mode === 1) {
-                const dx = player.x + player.w/2 - centerX;
-                const dy = player.y + player.h/2 - centerY;
-                const len = Math.hypot(dx, dy);
-                const baseSpeed = 2.5 + currentLevel * 0.1;
-                const vx = (dx/len) * baseSpeed, vy = (dy/len) * baseSpeed;
+                // 精准狙击弹
+                const vx = (dx / Math.hypot(dx, dy)) * (2.5 + currentLevel * 0.1);
+                const vy = (dy / Math.hypot(dx, dy)) * (2.5 + currentLevel * 0.1);
                 smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#f87171' });
             } else {
-                const count = 8 + Math.min(currentLevel * 2, 12);
+                // 双层交叉弹幕：统一角度网格（间距可穿越），两层只差速度不差角度，避免交错成墙
+                const count = 6 + Math.min(currentLevel, 6);
+                const spread = ANGLE_STEP * (count - 1) / 2;
                 for (let i = 0; i < count; i++) {
-                    const angle = (Math.PI * 2 / count) * i;
-                    const vx = Math.cos(angle) * 2.0, vy = Math.sin(angle) * 2.0;
+                    const t = (i / (count - 1)) * 2 - 1;
+                    const angle = baseAngle + t * spread;
+                    const spd = i % 2 === 0 ? 2.0 : 2.6;
+                    const vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd;
                     smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#fbbf24' });
                 }
             }
+        }
+
+        // Boss 召唤增强版小怪
+        function summonEnhancedMinions() {
+            if (!boss || !gameRunning || paused || gameOver) return;
+            const n = 2 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < n; i++) {
+                const x = Math.max(0, Math.min(CW - ENEMY_WIDTH, boss.x + (Math.random() - 0.5) * boss.w * 2));
+                const hpV = Math.max(2, getEnemyHp() * 2);
+                enemies.push({
+                    x, y: boss.y + boss.h, w: ENEMY_WIDTH, h: ENEMY_HEIGHT,
+                    speed: 2.0 + Math.random() * 0.6 + currentLevel * 0.05,
+                    hp: hpV, maxHp: hpV,
+                    color: '#ff00cc', enhanced: true, seed: Math.random() * 10
+                });
+            }
+            sfx.explode();
+            spawnSparks(boss.x + boss.w/2, boss.y + boss.h, '#ff00cc', 25);
         }
 
         function bossSkillBurst() {
             if (!boss) return;
             const centerX = boss.x + boss.w / 2;
             const centerY = boss.y + boss.h / 2;
-            const count = 30 + currentLevel * 5;
+            // 全周爆发：限制数量保证相邻子弹角间距 ≥ 0.26rad（飞机可穿越）
+            const count = Math.min(24, 16 + currentLevel * 2);
             for (let i = 0; i < count; i++) {
-                const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+                const angle = (Math.PI * 2 / count) * i + Math.random() * 0.1;
                 const speed = 1.5 + Math.random() * 1.5;
                 const vx = Math.cos(angle) * speed, vy = Math.sin(angle) * speed;
                 smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#ff00cc' });
             }
-            for (let i = 0; i < 5; i++) {
-                const dx = player.x + player.w/2 - centerX + (Math.random()-0.5)*100;
-                const dy = player.y + player.h/2 - centerY + (Math.random()-0.5)*100;
+            for (let i = 0; i < 3; i++) {
+                const dx = player.x + player.w/2 - centerX + (Math.random()-0.5)*120;
+                const dy = player.y + player.h/2 - centerY + (Math.random()-0.5)*120;
                 const len = Math.hypot(dx, dy);
                 const vx = (dx/len) * 4, vy = (dy/len) * 4;
                 smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#ff0000' });
@@ -621,10 +1170,15 @@
         function damagePlayer() {
             if (activeShieldTime > 0 || itemShieldTime > 0) return;
             hp = Math.max(0, hp - 1);
+            spawnSparks(player.x + player.w/2, player.y + player.h/2, '#ff5e6b', 15);
             if (hp <= 0) {
                 gameOver = true; gameRunning = false;
-                gems += Math.floor(score / 80);
-                clearSave(); showStartOverlay();
+                const earned = Math.floor(score / 80);
+                gems += earned;
+                sfx.explode();
+                clearSave(); showDeathOverlay('💀 你已坠机', earned);
+            } else {
+                sfx.hurt();
             }
             updateUI();
         }
@@ -639,6 +1193,7 @@
                 }
             }
             else if (type === 'life') hp = Math.min(getMaxHp(), hp + 1);
+            sfx.power();
             updateUI();
         }
 
@@ -659,6 +1214,7 @@
 
             if (activeShieldTime > 0) activeShieldTime--;
             if (itemShieldTime > 0) itemShieldTime--;
+            if (playerAura.time > 0) playerAura.time--;
             
             if (shieldCharges < MAX_SHIELD_CHARGES) {
                 shieldRechargeTimer++;
@@ -679,10 +1235,10 @@
 
             if (bossShieldTimer > 0) bossShieldTimer--;
 
-            // 触控或键盘移动
-            if (isTouching) {
+            // 触控或键盘移动（鼠标方案：鼠标移动后短期内平滑跟随光标）
+            if (isTouching || gameTime - lastMouseMoveFrame < 25) {
                 const dx = touchTargetX - (player.x + player.w/2);
-                player.x += dx * 0.4; // 平滑跟随手指
+                player.x += dx * 0.4; // 平滑跟随手指/鼠标
             } else {
                 if (keys.left) player.x = Math.max(0, player.x - player.speed);
                 if (keys.right) player.x = Math.min(CW - player.w, player.x + player.speed);
@@ -771,11 +1327,17 @@
                         enemies[j].hp -= bullet.damage;
                         used = true;
                         if (enemies[j].hp <= 0) {
-                            enemies.splice(j, 1); score += 10; gems += 1;
-                            if (!bossActive) { killCount++; progress = Math.min(100, (killCount / difficulty.bossThreshold) * 100); }
+                            const killed = enemies[j];
+                            enemies.splice(j, 1);
+                            score += killed.bossMinion ? 100 : 10;
+                            gems += killed.bossMinion ? 10 : 1;
+                            runKillCount += killed.bossMinion ? 5 : 1;
+                            if (!bossActive) { killCount += killed.bossMinion ? 5 : 1; progress = Math.min(100, (killCount / difficulty.bossThreshold) * 100); }
+                            sfx.explode();
+                            spawnSparks(bullet.x, bullet.y, killed.bossMinion ? '#ff9d5c' : '#ffd966', killed.bossMinion ? 30 : 12);
                         }
-                        updateUI(); 
-                        break;
+                    requestUI();
+                    break;
                     }
                 }
                 if (used) { bullets.splice(i, 1); continue; }
@@ -786,10 +1348,13 @@
                         used = true;
                         if (specialEnemies[j].hp <= 0) {
                             specialEnemies.splice(j, 1); score += 20; gems += 2;
+                            runKillCount += 2;
                             if (!bossActive) { killCount += 2; progress = Math.min(100, (killCount / difficulty.bossThreshold) * 100); }
+                            sfx.explode();
+                            spawnSparks(bullet.x, bullet.y, '#f87171', 20);
                             spawnPowerup(bullet.x, bullet.y);
                         }
-                        updateUI(); 
+                        requestUI();
                         break;
                     }
                 }
@@ -800,6 +1365,11 @@
                     const hpPercent = (bossHP / bossMaxHP) * 100;
                     if (hpPercent <= 80 && !bossSkillTriggers[80]) { bossSkillTriggers[80] = true; bossSkillBurst(); }
                     if (hpPercent <= 50 && !bossSkillTriggers[50]) { bossSkillTriggers[50] = true; bossSkillBurst(); }
+                    // 小Boss/大Boss血量过半：召唤下一级Boss作为小怪
+                    if (hpPercent <= 50 && boss.kind !== 'mini' && !boss.summoned50) {
+                        boss.summoned50 = true;
+                        summonLowerBossMinion();
+                    }
                     if (hpPercent <= 20 && !bossSkillTriggers[20]) { 
                         bossSkillTriggers[20] = true; 
                         bossSkillBurst(); 
@@ -809,43 +1379,68 @@
                     if (bossHP <= 0) {
                         bossActive = false; boss = null;
                         score += 200; gems += 30; progress = 0; killCount = 0;
+                        runKillCount += 10;
+                        sfx.explode();
+                        spawnSparks(CW/2, CH/2, '#ff9d5c', 40);
                         spawnPowerup(CW/2, CH/2);
                         if (gameMode === 'adventure') {
-                            currentLevel++;
-                            if (currentLevel > 5) { gameOver = true; gameRunning = false; gems += 100; clearSave(); showStartOverlay(); }
+                            handleAdventureBossKilled();
                         } else {
+                            // 无限模式：沿用原冒险模板，每5关可选择继续挑战
                             currentLevel++;
+                            if (currentLevel > 5 && (currentLevel - 1) % 5 === 0) {
+                                pendingVictoryGems = 100;
+                                showVictoryChoice();
+                            }
                         }
                     }
-                    updateUI(); bullets.splice(i, 1); continue;
+                    requestUI(); bullets.splice(i, 1); continue;
                 }
             }
 
+            // 碰撞检测：一旦本帧内弹出结算/升级界面(paused)或死亡，立即停止后续判定，
+            // 避免"Boss死亡弹结算"与"玩家被击中"在同一帧互相覆盖
             for (let i = enemies.length - 1; i >= 0; i--) {
+                if (paused || gameOver) break;
                 if (rectCollide(player, enemies[i])) { enemies.splice(i, 1); damagePlayer(); }
             }
             for (let i = specialEnemies.length - 1; i >= 0; i--) {
+                if (paused || gameOver) break;
                 if (rectCollide(player, specialEnemies[i])) { specialEnemies.splice(i, 1); damagePlayer(); }
             }
             for (let i = smallEnemies.length - 1; i >= 0; i--) {
+                if (paused || gameOver) break;
                 if (rectCollide(player, smallEnemies[i])) { smallEnemies.splice(i, 1); damagePlayer(); }
             }
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                if (paused || gameOver) break;
                 if (rectCollide(player, enemyBullets[i])) { enemyBullets.splice(i, 1); damagePlayer(); }
             }
-            if (bossActive && boss && bossShieldTimer <= 0 && rectCollide(player, boss)) {
+            if (!paused && !gameOver && bossActive && boss && bossShieldTimer <= 0 && rectCollide(player, boss)) {
                 damagePlayer(); player.x = Math.max(0, Math.min(CW - player.w, player.x - 30));
             }
 
+            if (gameOver) return; // 死亡后提前退出本帧，避免继续碰撞检测
+
             for (let i = powerups.length - 1; i >= 0; i--) {
+                if (paused || gameOver) break;
                 if (rectCollide(player, powerups[i])) {
                     applyPowerup(powerups[i].type);
                     powerups.splice(i, 1);
                 }
             }
 
+            // 局内升级检测：击坠数达到需求即弹出强化选择 (结算/确认界面打开时不触发)
+            if (!gameOver && runKillCount >= runUpgradeNeed
+                && deathOverlay.classList.contains('hidden')
+                && confirmOverlay.classList.contains('hidden')) {
+                runUpgradePending++;
+                runUpgradeNeed += 10;
+                showRunUpgrade();
+            }
+
             if (bossActive && boss) {
-                boss.x += bossMoveDirection * 2;
+                boss.x += bossMoveDirection * boss.moveSpeed;
                 if (boss.x <= 20 || boss.x + boss.w >= CW - 20) bossMoveDirection *= -1;
 
                 bossShootTimer--;
@@ -853,9 +1448,38 @@
                     bossShoot();
                     bossShootTimer = getBossShootCooldown();
                 }
+
+                // Boss 定期召唤（连战Boss召唤下级Boss，普通Boss召唤增强小怪）
+                bossSummonTimer--;
+                if (bossSummonTimer <= 0) {
+                    if (boss.isRush) {
+                        summonLowerBossMinion();
+                        bossSummonTimer = 420;
+                    } else {
+                        summonEnhancedMinions();
+                        bossSummonTimer = Math.max(180, 360 - currentLevel * 12);
+                    }
+                }
             }
 
-            if (!bossActive && killCount >= difficulty.bossThreshold) {
+            if (gameMode === 'adventure') {
+                // 冒险模式：按关卡类型生成Boss
+                if (!bossActive) {
+                    const type = getLevelType(currentLevel);
+                    if (type === 'rush') {
+                        if (!rushStarted) { rushStarted = true; rushIndex = 0; spawnRushBoss(); }
+                    } else if (type === 'normal') {
+                        // 普通关中段出现小小Boss，击杀后过关
+                        if (!miniBossSpawned && killCount >= Math.ceil(difficulty.bossThreshold / 2)) {
+                            miniBossSpawned = true;
+                            spawnLevelBoss('mini');
+                        }
+                    } else if (killCount >= difficulty.bossThreshold) {
+                        spawnLevelBoss(type === 'big' ? 'big' : 'small');
+                        killCount = 0; progress = 0;
+                    }
+                }
+            } else if (!bossActive && killCount >= difficulty.bossThreshold) {
                 spawnBoss();
                 killCount = 0;
                 progress = 0;
@@ -879,14 +1503,90 @@
             }
         }
 
+        // ===== 玩家机甲皮肤 =====
+        function drawPlayerShip() {
+            const px = player.x, py = player.y, w = player.w, h = player.h;
+            const cx = px + w / 2;
+            ctx.save();
+            // 引擎尾焰 (动态抖动)
+            const flame = 6 + Math.random() * 6;
+            ctx.shadowColor = '#ffb347'; ctx.shadowBlur = 14;
+            ctx.fillStyle = '#ffb347';
+            ctx.beginPath();
+            ctx.moveTo(cx - 5, py + h); ctx.lineTo(cx + 5, py + h); ctx.lineTo(cx, py + h + flame);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#fff3c4';
+            ctx.beginPath();
+            ctx.moveTo(cx - 2.5, py + h); ctx.lineTo(cx + 2.5, py + h); ctx.lineTo(cx, py + h + flame * 0.5);
+            ctx.closePath(); ctx.fill();
+            // 主机身
+            ctx.shadowColor = '#7ae0ff'; ctx.shadowBlur = 18;
+            ctx.fillStyle = '#2e6b8f';
+            ctx.beginPath();
+            ctx.moveTo(cx, py - 2);
+            ctx.lineTo(px + w * 0.72, py + h * 0.55);
+            ctx.lineTo(px + w, py + h);
+            ctx.lineTo(px + w * 0.55, py + h * 0.85);
+            ctx.lineTo(cx, py + h * 0.75);
+            ctx.lineTo(px + w * 0.45, py + h * 0.85);
+            ctx.lineTo(px, py + h);
+            ctx.lineTo(px + w * 0.28, py + h * 0.55);
+            ctx.closePath(); ctx.fill();
+            // 机身高光条
+            ctx.shadowBlur = 4; ctx.fillStyle = 'rgba(174,241,255,0.35)';
+            ctx.beginPath();
+            ctx.moveTo(cx, py); ctx.lineTo(cx + 3, py + h * 0.7); ctx.lineTo(cx - 3, py + h * 0.7);
+            ctx.closePath(); ctx.fill();
+            // 座舱
+            ctx.shadowBlur = 8; ctx.fillStyle = '#aef1ff';
+            ctx.beginPath(); ctx.ellipse(cx, py + h * 0.42, 4.5, 7, 0, 0, Math.PI * 2); ctx.fill();
+            // 翼尖炮
+            ctx.fillStyle = '#f0e86b'; ctx.shadowColor = '#f0e86b';
+            ctx.fillRect(px + w * 0.1, py + h * 0.5, 3, 7);
+            ctx.fillRect(px + w * 0.85, py + h * 0.5, 3, 7);
+            ctx.restore();
+        }
+
         // 绘制
         function draw() {
             ctx.clearRect(0, 0, CW, CH);
             ctx.fillStyle = '#0b1119'; ctx.fillRect(0, 0, CW, CH);
+
+            // 星空背景 (数量随画质设置)
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            for (const st of stars) {
+                st.y += st.sp;
+                if (st.y > CH) { st.y = -2; st.x = Math.random() * CW; }
+                ctx.fillRect(st.x, st.y, st.r, st.r);
+            }
+
+            // 爆炸粒子
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.x += s.vx; s.y += s.vy; s.vy += 0.05; s.life--;
+                if (s.life <= 0) { sparks.splice(i, 1); continue; }
+                ctx.globalAlpha = Math.min(1, s.life / 20);
+                ctx.fillStyle = s.color;
+                ctx.fillRect(s.x, s.y, 3, 3);
+            }
+            ctx.globalAlpha = 1;
+
             ctx.fillStyle = 'rgba(255,255,255,0.7)';
             for (let i = 0; i < 100; i++) {
                 if (i % 2 === 0) continue;
                 ctx.beginPath(); ctx.arc((i*37)%CW, (i*71)%CH, (i%3)*0.7+0.5, 0, Math.PI*2); ctx.fill();
+            }
+
+            // 升级特效光环：颜色随强化方向变化，范围随时间扩大
+            if (playerAura.time > 0) {
+                ctx.save();
+                ctx.globalAlpha = Math.min(1, playerAura.time / 50);
+                ctx.shadowColor = playerAura.color; ctx.shadowBlur = 25;
+                ctx.strokeStyle = playerAura.color; ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(player.x + player.w/2, player.y + player.h/2, 26 + (90 - playerAura.time) * 0.35, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
             }
 
             if (activeShieldTime > 0) {
@@ -899,19 +1599,7 @@
                 ctx.beginPath(); ctx.arc(player.x + player.w/2, player.y + player.h/2, 30, 0, Math.PI*2); ctx.stroke();
             }
             
-            ctx.shadowColor = '#7ae0ff'; ctx.shadowBlur = 18; ctx.fillStyle = player.color;
-            ctx.beginPath();
-            ctx.moveTo(player.x + player.w/2, player.y);
-            ctx.lineTo(player.x + player.w, player.y + player.h);
-            ctx.lineTo(player.x, player.y + player.h);
-            ctx.closePath(); ctx.fill();
-            
-            ctx.shadowBlur = 20; ctx.fillStyle = '#ffb347';
-            ctx.beginPath();
-            ctx.moveTo(player.x + player.w/2, player.y + player.h + 6);
-            ctx.lineTo(player.x + player.w/2 - 8, player.y + player.h + 2);
-            ctx.lineTo(player.x + player.w/2 + 8, player.y + player.h + 2);
-            ctx.closePath(); ctx.fill();
+            drawPlayerShip();
 
             ctx.shadowColor = '#f0e86b'; ctx.shadowBlur = 12;
             for (const b of bullets) {
@@ -927,35 +1615,85 @@
                 ctx.beginPath(); ctx.arc(eb.x, eb.y, 2, 0, Math.PI*2); ctx.fill();
             }
 
+            // 普通小怪：陨石皮肤（不规则岩石 + 陨石坑），增强版为紫红尖刺体
+            // Boss手下：缩小版Boss外形
             for (const e of enemies) {
-                ctx.shadowColor = '#ff4d4d'; ctx.shadowBlur = 18; ctx.fillStyle = e.color;
-                ctx.beginPath(); ctx.ellipse(e.x + e.w/2, e.y + e.h/2, e.w/2, e.h/2, 0, 0, Math.PI*2); ctx.fill();
-                ctx.shadowBlur = 5; ctx.fillStyle = '#3a1e1e';
-                ctx.beginPath(); ctx.arc(e.x + e.w*0.3, e.y + e.h*0.3, 5, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#5e2e2e';
-                ctx.beginPath(); ctx.arc(e.x + e.w*0.7, e.y + e.h*0.6, 4, 0, Math.PI*2); ctx.fill();
+                ctx.save();
+                const cx0 = e.x + e.w/2, cy0 = e.y + e.h/2;
+                if (e.bossMinion) {
+                    const sk = e.skin || BOSS_SKINS[0];
+                    ctx.shadowColor = sk.glow; ctx.shadowBlur = 20;
+                    ctx.fillStyle = sk.body;
+                    ctx.beginPath(); ctx.ellipse(cx0, cy0, e.w/2, e.h/2, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 6; ctx.fillStyle = sk.eye;
+                    ctx.beginPath();
+                    ctx.arc(cx0 - e.w*0.15, cy0 - e.h*0.1, e.w*0.09, 0, Math.PI*2);
+                    ctx.arc(cx0 + e.w*0.15, cy0 - e.h*0.1, e.w*0.09, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(cx0 - e.w*0.17, cy0 - e.h*0.12, e.w*0.03, 0, Math.PI*2);
+                    ctx.arc(cx0 + e.w*0.13, cy0 - e.h*0.12, e.w*0.03, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.shadowColor = e.enhanced ? '#ff00cc' : '#ff4d4d'; ctx.shadowBlur = 18;
+                    ctx.fillStyle = e.color;
+                    ctx.beginPath();
+                    const nPts = 7;
+                    for (let i = 0; i < nPts; i++) {
+                        const a = (Math.PI * 2 / nPts) * i;
+                        const r = e.w/2 * (e.enhanced ? 0.7 + 0.3 * Math.sin(i * 2.4 + (e.seed || 0)) : 0.85 + 0.15 * Math.sin((e.seed || 0) * 7 + i * 3));
+                        const vx = cx0 + Math.cos(a) * r, vy = cy0 + Math.sin(a) * r;
+                        if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+                    }
+                    ctx.closePath(); ctx.fill();
+                    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                    ctx.beginPath(); ctx.arc(cx0 - e.w*0.15, cy0 - e.h*0.12, e.w*0.14, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx0 + e.w*0.2, cy0 + e.h*0.15, e.w*0.1, 0, Math.PI*2); ctx.fill();
+                    // 独眼
+                    ctx.fillStyle = e.enhanced ? '#fff' : '#ffd9d9';
+                    ctx.beginPath(); ctx.arc(cx0, cy0 - e.h*0.05, e.w*0.12, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#1a0a0a';
+                    ctx.beginPath(); ctx.arc(cx0, cy0 - e.h*0.05, e.w*0.055, 0, Math.PI*2); ctx.fill();
+                }
                 if (e.hp < e.maxHp) {
                     ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     ctx.fillStyle = '#fff'; ctx.fillText(`${Math.ceil(e.hp)}/${e.maxHp}`, e.x + e.w/2, e.y - 2);
                 }
+                ctx.restore();
             }
 
+            // 特殊小怪：UFO 飞碟皮肤
             for (const s of specialEnemies) {
-                ctx.shadowColor = s.color; ctx.shadowBlur = 20; ctx.fillStyle = s.color;
-                ctx.beginPath(); ctx.ellipse(s.x + s.w/2, s.y + s.h/2, s.w/2, s.h/2, 0, 0, Math.PI*2); ctx.fill();
+                ctx.save();
+                const cx0 = s.x + s.w/2, cy0 = s.y + s.h/2;
+                ctx.shadowColor = s.color; ctx.shadowBlur = 20;
+                // 穹顶
+                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.beginPath(); ctx.arc(cx0, cy0 - 2, s.w/3.6, Math.PI, 0); ctx.fill();
+                // 碟身
+                ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.ellipse(cx0, cy0 + 3, s.w/2, s.h/3.2, 0, 0, Math.PI*2); ctx.fill();
+                // 底部灯组
                 ctx.shadowBlur = 5; ctx.fillStyle = '#fbbf24';
-                ctx.beginPath(); ctx.arc(s.x + s.w/2, s.y + s.h/2, 6, 0, Math.PI*2); ctx.fill();
-                ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#fff'; ctx.fillText(s.type, s.x + s.w/2, s.y + s.h/2);
+                for (let i = -1; i <= 1; i++) {
+                    ctx.beginPath(); ctx.arc(cx0 + i * s.w/4, cy0 + s.h/4, 2.5, 0, Math.PI*2); ctx.fill();
+                }
                 if (s.hp < s.maxHp) {
                     ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                     ctx.fillStyle = '#fff'; ctx.fillText(`${Math.ceil(s.hp)}/${s.maxHp}`, s.x + s.w/2, s.y - 2);
                 }
+                ctx.restore();
             }
 
+            // Boss弹幕小怪：发光圆珠 + 白色内核
             for (const s of smallEnemies) {
-                ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 12; ctx.fillStyle = s.color;
-                ctx.beginPath(); ctx.arc(s.x + s.w/2, s.y + s.h/2, s.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.save();
+                const cx0 = s.x + s.w/2, cy0 = s.y + s.h/2;
+                ctx.shadowColor = s.color; ctx.shadowBlur = 12;
+                ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.arc(cx0, cy0, s.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(cx0, cy0, s.w/4, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
             }
 
             for (const p of powerups) {
@@ -967,22 +1705,80 @@
             }
 
             if (bossActive && boss) {
+                const skin = boss.skin || BOSS_SKINS[0];
                 if (bossShieldTimer > 0) {
                     ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 40;
                     ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 4;
                     ctx.beginPath(); ctx.arc(boss.x + boss.w/2, boss.y + boss.h/2, boss.w/1.5, 0, Math.PI*2); ctx.stroke();
                 }
-                
-                ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 25; ctx.fillStyle = boss.color;
-                ctx.beginPath(); ctx.ellipse(boss.x + boss.w/2, boss.y + boss.h/2, boss.w/2, boss.h/2, 0, 0, Math.PI*2); ctx.fill();
-                ctx.shadowBlur = 10; ctx.fillStyle = '#ff3b3b';
-                ctx.beginPath(); ctx.arc(boss.x + boss.w*0.35, boss.y + boss.h*0.4, 8, 0, Math.PI*2); ctx.arc(boss.x + boss.w*0.65, boss.y + boss.h*0.4, 8, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(boss.x + boss.w*0.33, boss.y + boss.h*0.38, 3, 0, Math.PI*2); ctx.arc(boss.x + boss.w*0.63, boss.y + boss.h*0.38, 3, 0, Math.PI*2); ctx.fill();
+
+                ctx.save();
+                const bx = boss.x, by = boss.y, bw = boss.w, bh = boss.h;
+                const bcx = bx + bw/2, bcy = by + bh/2;
+                ctx.shadowColor = skin.glow; ctx.shadowBlur = 25;
+                // 头部装饰 (不同关卡的皮肤造型)
+                ctx.fillStyle = skin.glow;
+                if (skin.pattern === 'horns') {
+                    ctx.beginPath();
+                    ctx.moveTo(bx + bw*0.12, by + bh*0.25); ctx.lineTo(bx + bw*0.02, by - 12); ctx.lineTo(bx + bw*0.3, by + bh*0.1);
+                    ctx.closePath(); ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(bx + bw*0.88, by + bh*0.25); ctx.lineTo(bx + bw*0.98, by - 12); ctx.lineTo(bx + bw*0.7, by + bh*0.1);
+                    ctx.closePath(); ctx.fill();
+                } else if (skin.pattern === 'crown') {
+                    ctx.beginPath();
+                    for (let i = 0; i <= 4; i++) {
+                        const vx = bx + bw*0.2 + bw*0.15*i;
+                        const vy = (i % 2 === 0) ? by - 14 : by + 2;
+                        i === 0 ? ctx.moveTo(vx, vy) : ctx.lineTo(vx, vy);
+                    }
+                    ctx.lineTo(bx + bw*0.8, by + bh*0.12); ctx.lineTo(bx + bw*0.2, by + bh*0.12);
+                    ctx.closePath(); ctx.fill();
+                } else if (skin.pattern === 'spikes') {
+                    for (let i = 0; i < 5; i++) {
+                        const vx = bx + bw*0.15 + bw*0.175*i;
+                        ctx.beginPath();
+                        ctx.moveTo(vx - 8, by + bh*0.15); ctx.lineTo(vx, by - 16); ctx.lineTo(vx + 8, by + bh*0.15);
+                        ctx.closePath(); ctx.fill();
+                    }
+                } else if (skin.pattern === 'halo') {
+                    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.ellipse(bcx, by - 16, bw*0.3, 8, 0, 0, Math.PI*2); ctx.stroke();
+                }
+                // 主体
+                ctx.shadowColor = skin.glow; ctx.shadowBlur = 25;
+                ctx.fillStyle = skin.body;
+                ctx.beginPath(); ctx.ellipse(bcx, bcy, bw/2, bh/2, 0, 0, Math.PI*2); ctx.fill();
+                // 装甲缝线
+                ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.ellipse(bcx, bcy, bw/2.6, bh/2.8, 0, 0, Math.PI*2); ctx.stroke();
+                // 眼睛
+                ctx.shadowBlur = 10; ctx.fillStyle = skin.eye;
+                if (skin.pattern === 'eye') {
+                    // 深渊之眼：单只巨眼
+                    ctx.beginPath(); ctx.ellipse(bcx, bcy - bh*0.08, bw*0.16, bh*0.16, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath(); ctx.arc(bcx, bcy - bh*0.08, bw*0.06, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath(); ctx.arc(bcx - bw*0.03, bcy - bh*0.12, 4, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(bx + bw*0.35, by + bh*0.4, 8, 0, Math.PI*2);
+                    ctx.arc(bx + bw*0.65, by + bh*0.4, 8, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(bx + bw*0.33, by + bh*0.38, 3, 0, Math.PI*2);
+                    ctx.arc(bx + bw*0.63, by + bh*0.38, 3, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+                // 血条 + 皮肤名称
                 ctx.shadowBlur = 0; ctx.fillStyle = '#330000';
-                ctx.fillRect(boss.x, boss.y - 15, boss.w, 8);
+                ctx.fillRect(bx, by - 15, bw, 8);
                 ctx.fillStyle = '#ff3b3b';
-                ctx.fillRect(boss.x, boss.y - 15, boss.w * (bossHP / bossMaxHP), 8);
+                ctx.fillRect(bx, by - 15, bw * (bossHP / bossMaxHP), 8);
+                ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                ctx.fillStyle = skin.glow;
+                ctx.fillText(skin.name, bcx, by - 18);
             }
 
             if (gameOver) {
@@ -995,11 +1791,207 @@
         }
 
         // 界面控制
+        function showDeathOverlay(title, earnedGems) {
+            deathTitle.textContent = title;
+            const reachText = title.includes('通关') ? '全部通关 🎉' : `第 ${currentLevel} 关`;
+            deathStats.innerHTML = `本次得分: <b>${score}</b><br>结算水晶: <b>💎 ${earnedGems}</b><br>到达: <b>${reachText}</b>`;
+            hideOverlays();
+            deathContinueBtn.style.display = 'none';
+            deathConfirmBtn.textContent = '✔ 确认返回菜单';
+            persistProfile(); // 死亡结算的水晶与升级进度立即保存
+            deathOverlay.classList.remove('hidden');
+            updateSaveSlotUI();
+        }
+
+        // 每通过5关：选择继续挑战（难度延续增加）或结算返回菜单
+        function showVictoryChoice() {
+            paused = true;
+            deathTitle.textContent = '🏆 恭喜通过关卡！';
+            deathStats.innerHTML = `当前得分: <b>${score}</b><br>水晶: <b>💎 ${gems}</b><br>下一阶段难度将大幅提升，<br>局内强化与移速加成将保留。`;
+            hideOverlays();
+            deathContinueBtn.textContent = '🚀 继续挑战';
+            deathContinueBtn.style.display = 'block';
+            deathConfirmBtn.textContent = `✔ 结算返回菜单 (💎+${pendingVictoryGems})`;
+            continueAction = () => {
+                gameOver = false;
+                hp = Math.min(getMaxHp(), hp + 2);
+                hideOverlays();
+                paused = false;
+                updateUI();
+            };
+            settleAction = null; // 默认返回主菜单
+            persistProfile(); // 无限模式每5关结算节点保存进度
+            deathOverlay.classList.remove('hidden');
+            updateSaveSlotUI();
+        }
+
+        // ===== 冒险模式：关卡流程 =====
+        function handleAdventureBossKilled() {
+            const lvl = currentLevel;
+            // 解锁下一关
+            if (lvl >= loadUnlock()) saveUnlock(Math.min(TOTAL_LEVELS, lvl + 1));
+            const type = getLevelType(lvl);
+            if (type === 'rush') {
+                rushIndex++;
+                if (rushIndex < RUSH_SEQUENCE.length) {
+                    // 连战中：生成下一个Boss
+                    spawnRushBoss();
+                    return;
+                }
+                showLevelComplete(true);
+            } else {
+                showLevelComplete(false);
+            }
+        }
+
+        function showLevelComplete(allDone) {
+            paused = true;
+            const gemsReward = allDone ? 300 : 20 + currentLevel * 2;
+            gems += gemsReward;
+            deathTitle.textContent = allDone ? '🏆 恭喜通关全部26关！' : `✅ 第 ${currentLevel} 关通过！`;
+            deathStats.innerHTML = `当前得分: <b>${score}</b><br>奖励水晶: <b>💎 ${gemsReward}</b><br>${allDone ? '你击败了所有Boss！' : '已解锁下一关 🎉'}`;
+            hideOverlays();
+            deathContinueBtn.textContent = allDone ? '🔁 再战第26关' : '▶ 下一关';
+            deathContinueBtn.style.display = 'block';
+            deathConfirmBtn.textContent = '🗺️ 返回关卡选择';
+            continueAction = allDone
+                ? () => startAdventureLevel(26)
+                : () => startAdventureLevel(Math.min(TOTAL_LEVELS, currentLevel + 1));
+            settleAction = () => showLevelSelect();
+            persistProfile(); // 过关奖励水晶与解锁进度立即保存
+            deathOverlay.classList.remove('hidden');
+            updateSaveSlotUI();
+        }
+
+        function startAdventureLevel(lvl) {
+            resetGame('adventure');
+            currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, lvl));
+            miniBossSpawned = false; rushStarted = false; rushIndex = 0;
+            hideOverlays(); // 关闭关卡选择/结算等界面，否则游戏在背后运行但界面不消失
+            updateUI();
+        }
+
+        function showLevelSelect() {
+            gameRunning = false; paused = false; gameOver = false;
+            hideOverlays();
+            renderLevelGrid();
+            levelSelectOverlay.classList.remove('hidden');
+        }
+
+        function renderLevelGrid() {
+            const unlocked = loadUnlock();
+            levelGrid.innerHTML = '';
+            for (let i = 1; i <= TOTAL_LEVELS; i++) {
+                const type = getLevelType(i);
+                const cell = document.createElement('button');
+                const locked = i > unlocked;
+                cell.className = 'level-cell'
+                    + (locked ? ' locked' : '')
+                    + (type === 'small' ? ' boss' : '')
+                    + (type === 'big' ? ' big' : '')
+                    + (type === 'rush' ? ' rush' : '');
+                const tag = type === 'rush' ? '⚔️终局' : type === 'big' ? '👑大Boss' : type === 'small' ? '🕹小Boss' : '普通';
+                cell.innerHTML = `<div>${locked ? '🔒' : i}</div><div class="lvl-tag">${tag}</div>`;
+                cell.disabled = locked;
+                if (!locked) cell.addEventListener('click', () => { startAdventureLevel(i); });
+                levelGrid.appendChild(cell);
+            }
+        }
+
+        // ===== 局内升级系统 =====
+        const RUN_ASPECTS = [
+            { key: 'damage',  name: '⚔️ 火力强化', color: '#ef4444',
+              desc: (v) => `子弹伤害 +${v}`,
+              apply: (v) => { runBonus.damage += v; } },
+            { key: 'fireRate', name: '🔥 射速强化', color: '#fbbf24',
+              desc: (v) => `攻击速度 +${Math.round(v * 10)}%`,
+              apply: (v) => { runBonus.fireRate += v; } },
+            { key: 'maxHp',   name: '🛡️ 装甲强化', color: '#22c55e',
+              desc: (v) => `生命上限 +${Math.max(1, Math.round(v))} 并回满`,
+              apply: (v) => { const n = Math.max(1, Math.round(v)); runBonus.maxHp += n; hp = getMaxHp(); } },
+        ];
+        const RARITIES = [
+            { key: 'white',  name: '普 通', color: '#e5e7eb', value: 0.5 },
+            { key: 'blue',   name: '稀 有', color: '#3b82f6', value: 1 },
+            { key: 'purple', name: '史 诗', color: '#a855f7', value: 1.5 },
+            { key: 'orange', name: '传 说', color: '#f59e0b', value: 4 },
+        ];
+        // 基础概率 白0.2 / 蓝0.6 / 紫0.15 / 橙0.05，保底：每次升级后紫橙概率+0.1
+        function rollRarity() {
+            const pity = Math.min(runPity, 0.5);
+            const wRaw = Math.max(0.02, 0.2 - pity * 0.5);
+            const bRaw = Math.max(0.05, 0.6 - pity * 0.5);
+            const pRaw = 0.15 + pity;
+            const oRaw = 0.05 + pity;
+            const sum = wRaw + bRaw + pRaw + oRaw;
+            let r = Math.random() * sum;
+            const entries = [['white', wRaw], ['blue', bRaw], ['purple', pRaw], ['orange', oRaw]];
+            for (const [key, weight] of entries) {
+                if (r < weight) return key;
+                r -= weight;
+            }
+            return 'blue';
+        }
+        function showRunUpgrade() {
+            paused = true;
+            hideOverlays();
+            levelUpOptions.innerHTML = '';
+            // 两个选项的强化方面不重复：洗牌取前两个
+            const pool = [...RUN_ASPECTS].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 2; i++) {
+                const aspect = pool[i];
+                const rarity = RARITIES.find(r => r.key === rollRarity());
+                const card = document.createElement('div');
+                card.className = 'levelup-card';
+                card.style.borderColor = rarity.color;
+                card.style.boxShadow = `0 0 16px ${rarity.color}66`;
+                card.innerHTML = `<div class="r-name" style="color:${rarity.color};">${rarity.name}</div>
+                                  <div class="a-name">${aspect.name}</div>
+                                  <div class="a-desc">${aspect.desc(rarity.value)}</div>`;
+                card.addEventListener('click', () => applyRunUpgrade(aspect, rarity));
+                levelUpOptions.appendChild(card);
+            }
+            levelUpPity.textContent = runPity > 0
+                ? `🛡️ 保底机制：史诗/传说出现率已提升 +${Math.round(Math.min(runPity, 0.5) * 100)}%`
+                : '';
+            levelUpOverlay.classList.remove('hidden');
+        }
+        function applyRunUpgrade(aspect, rarity) {
+            if (levelUpOverlay.classList.contains('hidden')) return; // 防连点重复生效
+            levelUpOverlay.classList.add('hidden');
+            try {
+                aspect.apply(rarity.value);
+                player.speed += 0.1; // 每次升级移速 +0.1
+                // 升级特效：机身光环按强化方向变色 + 粒子按稀有度颜色迸发
+                playerAura = { time: 90, color: aspect.color };
+                spawnSparks(player.x + player.w/2, player.y + player.h/2, rarity.color, 25);
+                if (rarity.key === 'purple' || rarity.key === 'orange') {
+                    runPity = 0; // 抽到紫/橙重置保底
+                    sfx.upgrade();
+                } else {
+                    runPity += 0.1;
+                    sfx.power();
+                }
+            } finally {
+                // 无论升级过程是否出错，都必须恢复运行状态，避免暂停软锁
+                runUpgradePending--;
+                if (runUpgradePending > 0) {
+                    showRunUpgrade();
+                } else {
+                    levelUpOverlay.classList.add('hidden');
+                    paused = false;
+                    updateUI();
+                }
+            }
+        }
+
         function showStartOverlay() {
             startOverlay.classList.remove('hidden');
             upgradeOverlay.classList.add('hidden');
             pauseOverlay.classList.add('hidden');
             difficultyOverlay.classList.add('hidden');
+            deathOverlay.classList.add('hidden');
+            levelSelectOverlay.classList.add('hidden');
             gameRunning = false; paused = false;
             updateSaveSlotUI();
         }
@@ -1008,6 +2000,10 @@
             upgradeOverlay.classList.add('hidden');
             pauseOverlay.classList.add('hidden');
             difficultyOverlay.classList.add('hidden');
+            deathOverlay.classList.add('hidden');
+            confirmOverlay.classList.add('hidden');
+            levelUpOverlay.classList.add('hidden');
+            levelSelectOverlay.classList.add('hidden');
         }
         function showUpgradeOverlay() {
             startOverlay.classList.add('hidden'); pauseOverlay.classList.add('hidden'); difficultyOverlay.classList.add('hidden');
@@ -1058,6 +2054,8 @@
                     if (gems >= cost && level < config.maxLevel) {
                         gems -= cost; upgradeLevels[key]++;
                         if (key === 'life') hp = Math.min(getMaxHp(), hp + 2);
+                        sfx.upgrade();
+                        persistProfile(); // 升级中心购买立即保存
                         updateUI(); renderUpgradeList();
                     }
                 });
@@ -1107,11 +2105,21 @@
         }
 
         function initEvents() {
-            // 键盘事件 (支持电脑端)
+            // 键盘事件 (支持电脑端，按键可在设置中自定义)
             window.addEventListener('keydown', (e) => {
                 const key = e.key.toLowerCase();
-                if (key === 'escape') {
+                // 改键监听状态：捕获下一个按键
+                if (rebindingAction) {
                     e.preventDefault();
+                    if (key !== 'escape') { keyBinds[rebindingAction] = key; saveKeybinds(); }
+                    rebindingAction = null;
+                    renderKeybindUI();
+                    return;
+                }
+                if (key === keyBinds.pause || key === 'escape') {
+                    e.preventDefault();
+                    // 局内升级/结算界面打开时不允许用暂停键解除暂停
+                    if (!levelUpOverlay.classList.contains('hidden') || !deathOverlay.classList.contains('hidden')) return;
                     if (gameRunning && !gameOver) {
                         if (paused) { paused = false; hidePauseOverlay(); updateUI(); } 
                         else { showPauseOverlay(); }
@@ -1121,17 +2129,18 @@
                 if ([' ', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
                 if (!gameRunning || paused || gameOver) return;
                 
-                if (key === 'arrowleft' || key === 'a') keys.left = true;
-                if (key === 'arrowright' || key === 'd') keys.right = true;
-                if (key === ' ') keys.space = true;
-                if (key === 'e') activateShield();
+                // 键盘按下时取消鼠标跟随控制，避免抢方向盘
+                if (key === 'arrowleft' || key === 'a' || key === keyBinds.left) { keys.left = true; lastMouseMoveFrame = -1e9; }
+                if (key === 'arrowright' || key === 'd' || key === keyBinds.right) { keys.right = true; lastMouseMoveFrame = -1e9; }
+                if (key === ' ' || key === keyBinds.attack) keys.space = true;
+                if (key === 'e' || key === keyBinds.skill) activateShield();
             });
 
             window.addEventListener('keyup', (e) => {
                 const key = e.key.toLowerCase();
-                if (key === 'arrowleft' || key === 'a') keys.left = false;
-                if (key === 'arrowright' || key === 'd') keys.right = false;
-                if (key === ' ') keys.space = false;
+                if (key === 'arrowleft' || key === 'a' || key === keyBinds.left) keys.left = false;
+                if (key === 'arrowright' || key === 'd' || key === keyBinds.right) keys.right = false;
+                if (key === ' ' || key === keyBinds.attack) keys.space = false;
             });
 
             // 触控事件 (手机端)
@@ -1162,22 +2171,26 @@
                 isTouching = false;
             }, { passive: false });
 
-            // 鼠标事件 (兼容电脑) - 按住开火
+            // 鼠标事件 (电脑端方案二：鼠标移动跟随 + 左键攻击 + 右键技能，按键可在设置修改)
             canvas.addEventListener('mousedown', (e) => {
-                if (e.button === 0 && gameRunning && !paused && !gameOver) {
-                    e.preventDefault(); 
-                    isTouching = true;
-                    const coords = getCanvasCoords(e);
-                    touchTargetX = coords.x;
-                }
+                if (!gameRunning || paused || gameOver) return;
+                e.preventDefault(); 
+                const coords = getCanvasCoords(e);
+                touchTargetX = coords.x;
+                if (e.button === mouseBinds.attack) { isTouching = true; keys.space = true; lastMouseMoveFrame = gameTime; }
+                if (e.button === mouseBinds.skill) activateShield();
             });
             canvas.addEventListener('mousemove', (e) => {
-                if (isTouching && gameRunning && !paused && !gameOver) {
-                    const coords = getCanvasCoords(e);
-                    touchTargetX = coords.x;
-                }
+                if (!gameRunning || paused || gameOver) return;
+                // 鼠标移动即控制飞机（无需按住），持续移动则持续跟随
+                const coords = getCanvasCoords(e);
+                touchTargetX = coords.x;
+                lastMouseMoveFrame = gameTime;
             });
-            window.addEventListener('mouseup', () => { isTouching = false; });
+            window.addEventListener('mouseup', (e) => { 
+                isTouching = false;
+                if (e.button === mouseBinds.attack) keys.space = false; 
+            });
             
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
             window.addEventListener('blur', () => { 
@@ -1186,26 +2199,84 @@
             });
 
             // UI 按钮
-            adventureModeBtn.addEventListener('click', () => { resetGame('adventure'); hideOverlays(); });
+            adventureModeBtn.addEventListener('click', () => { showLevelSelect(); });
+            levelSelectBackBtn.addEventListener('click', () => { showStartOverlay(); });
             endlessModeBtn.addEventListener('click', () => { resetGame('endless'); hideOverlays(); });
             loadGameBtn.addEventListener('click', () => { if (!loadGame()) alert('没有找到存档或存档已损坏'); });
             upgradeBtn.addEventListener('click', () => { showUpgradeOverlay(); });
             difficultyBtn.addEventListener('click', () => {
+                difficultyFromPause = false;
                 startOverlay.classList.add('hidden');
                 difficultyOverlay.classList.remove('hidden');
                 updateDifficultyLabels();
             });
             closeUpgradeBtn.addEventListener('click', () => { showStartOverlay(); });
-            
-            closeDifficultyBtn.addEventListener('click', () => {
+            upgradeBackBtn.addEventListener('click', () => { showStartOverlay(); });
+
+            function applyDifficultyAndExit() {
                 difficulty.spawnRate = parseFloat(sliderSpawnRate.value);
                 difficulty.enemySpeed = parseFloat(sliderEnemySpeed.value);
                 difficulty.enemyHp = parseFloat(sliderEnemyHp.value);
                 difficulty.bossHp = parseFloat(sliderBossHp.value);
                 difficulty.bossRate = parseFloat(sliderBossRate.value);
                 difficulty.bossThreshold = parseInt(sliderBossThreshold.value);
-                showStartOverlay();
+                if (difficultyFromPause) {
+                    // 游戏中调整难度：返回暂停菜单
+                    difficultyFromPause = false;
+                    difficultyOverlay.classList.add('hidden');
+                    showPauseOverlay();
+                } else {
+                    showStartOverlay();
+                }
+            }
+            closeDifficultyBtn.addEventListener('click', applyDifficultyAndExit);
+            difficultyBackBtn.addEventListener('click', applyDifficultyAndExit);
+            pauseDifficultyBtn.addEventListener('click', () => {
+                if (!gameRunning || gameOver) return;
+                difficultyFromPause = true;
+                hidePauseOverlay();
+                difficultyOverlay.classList.remove('hidden');
+                updateDifficultyLabels();
             });
+
+            // 确认弹窗
+            function showConfirm(msg, onYes) {
+                confirmMsg.textContent = msg;
+                confirmCallback = onYes;
+                confirmOverlay.classList.remove('hidden');
+            }
+            confirmYesBtn.addEventListener('click', () => {
+                confirmOverlay.classList.add('hidden');
+                if (confirmCallback) { const cb = confirmCallback; confirmCallback = null; cb(); }
+            });
+            confirmNoBtn.addEventListener('click', () => { confirmCallback = null; confirmOverlay.classList.add('hidden'); });
+
+            // 设置项：音量 / 画质
+            volumeSfx.addEventListener('input', () => { sfxVolume = volumeSfx.value / 100; saveSettings(); });
+            volumeMusic.addEventListener('input', () => { setMusicVolume(volumeMusic.value / 100); saveSettings(); });
+            qualitySelect.addEventListener('change', () => { qualitySetting = qualitySelect.value; initStars(); saveSettings(); });
+
+            // 按键自定义：鼠标键位冲突时自动互换 + 恢复默认
+            const mouseBtnNames = ['左键', '中键', '右键'];
+            function syncMouseBindUI() {
+                document.getElementById('mouseAttackSel').value = String(mouseBinds.attack);
+                document.getElementById('mouseSkillSel').value = String(mouseBinds.skill);
+            }
+            document.getElementById('mouseAttackSel').addEventListener('change', (e) => {
+                const v = parseInt(e.target.value);
+                if (v === mouseBinds.skill) mouseBinds.skill = mouseBinds.attack; // 冲突互换
+                mouseBinds.attack = v;
+                saveKeybinds(); syncMouseBindUI();
+            });
+            document.getElementById('mouseSkillSel').addEventListener('change', (e) => {
+                const v = parseInt(e.target.value);
+                if (v === mouseBinds.attack) mouseBinds.attack = mouseBinds.skill;
+                mouseBinds.skill = v;
+                saveKeybinds(); syncMouseBindUI();
+            });
+            document.getElementById('keybindResetBtn').addEventListener('click', () => { resetKeybinds(); syncMouseBindUI(); });
+            syncMouseBindUI();
+            renderKeybindUI();
 
             sliderSpawnRate.addEventListener('input', updateDifficultyLabels);
             sliderEnemySpeed.addEventListener('input', updateDifficultyLabels);
@@ -1224,17 +2295,46 @@
             skillBtn.addEventListener('click', activateShield);
             pauseBtn.addEventListener('click', () => {
                 if (!gameRunning || gameOver) return;
+                if (!levelUpOverlay.classList.contains('hidden') || !deathOverlay.classList.contains('hidden')) return;
                 if (paused) { paused = false; hidePauseOverlay(); updateUI(); } 
                 else { showPauseOverlay(); }
             });
 
             restartBtn.addEventListener('click', () => {
-                if (gameRunning) { 
-                    if (confirm('确定要重新开始吗？当前进度将丢失。')) { resetGame(gameMode); hideOverlays(); }
+                if (gameRunning) {
+                    showConfirm('确定要重新开始吗？当前进度将丢失。', () => {
+                        if (gameMode === 'adventure') startAdventureLevel(currentLevel);
+                        else resetGame(gameMode);
+                        hideOverlays();
+                    });
                 } else { showStartOverlay(); }
             });
 
             resumeBtn.addEventListener('click', () => { paused = false; hidePauseOverlay(); updateUI(); });
+            pauseBackBtn.addEventListener('click', () => { paused = false; hidePauseOverlay(); updateUI(); });
+            settingsBackBtn.addEventListener('click', () => { settingsPanel.style.display = 'none'; });
+            // 结算面板：确认=按settleAction跳转(默认主菜单)，继续=按continueAction执行
+            function settleAndExit() {
+                if (pendingVictoryGems > 0) { gems += pendingVictoryGems; pendingVictoryGems = 0; clearSave(); }
+                deathContinueBtn.style.display = 'none';
+                deathConfirmBtn.textContent = '✔ 确认返回菜单';
+                const act = settleAction; settleAction = null; continueAction = null;
+                persistProfile();
+                if (act) act(); else showStartOverlay();
+            }
+            deathConfirmBtn.addEventListener('click', () => { settleAndExit(); });
+            deathBackBtn.addEventListener('click', () => { settleAndExit(); });
+            deathContinueBtn.addEventListener('click', () => {
+                deathContinueBtn.style.display = 'none';
+                deathConfirmBtn.textContent = '✔ 确认返回菜单';
+                pendingVictoryGems = 0;
+                const act = continueAction; continueAction = null; settleAction = null;
+                if (act) act();
+            });
+            gameBackBtn.addEventListener('click', () => {
+                if (gameRunning && !gameOver) { showPauseOverlay(); }
+                else { showStartOverlay(); }
+            });
             saveAndExitBtn.addEventListener('click', () => {
                 if (saveGame()) { paused = false; hidePauseOverlay(); showStartOverlay(); }
                 else { alert('保存失败，请重试'); }
@@ -1243,19 +2343,79 @@
             settingsBtn.addEventListener('click', () => {
                 settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
             });
+
+            // ===== 账号登录/注册/退出 =====
+            const authLoginBtn = document.getElementById('authLoginBtn');
+            authLoginBtn.addEventListener('click', () => {
+                const msg = document.getElementById('authMsg');
+                const name = document.getElementById('authUser').value.trim();
+                const pwd = document.getElementById('authPass').value;
+                const err = loginAccount(name, pwd);
+                if (err) { msg.textContent = '⚠️ ' + err; }
+                else {
+                    document.getElementById('authUser').value = '';
+                    document.getElementById('authPass').value = '';
+                }
+            });
+            document.getElementById('authPass').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') authLoginBtn.click();
+            });
+            document.getElementById('authLogoutBtn').addEventListener('click', () => {
+                if (gameRunning || gameOver) return; // 游戏进行中不允许切换账号
+                logoutAccount();
+            });
+        }
+
+        function anyOverlayOpen() {
+            return [startOverlay, upgradeOverlay, pauseOverlay, difficultyOverlay,
+                    deathOverlay, confirmOverlay, levelUpOverlay, levelSelectOverlay]
+                .some(o => o && !o.classList.contains('hidden'));
         }
 
         function gameLoop() {
-            update();
-            draw();
+            try {
+                // 防软锁看门狗：游戏进行中但处于暂停且没有任何弹窗时，自动恢复运行
+                if (gameRunning && !gameOver && paused && !anyOverlayOpen()) {
+                    console.warn('检测到暂停软锁，已自动恢复');
+                    paused = false;
+                }
+                // 防软锁看门狗：游戏未运行且没有任何弹窗时，回到主菜单
+                if (!gameRunning && !gameOver && !anyOverlayOpen()) {
+                    showStartOverlay();
+                }
+                update();
+                if (uiDirty) updateUI();
+                draw();
+            } catch (err) {
+                // 任何单帧异常都不中断渲染循环，避免卡死
+                console.error('游戏循环异常(已自动恢复):', err);
+            }
             requestAnimationFrame(gameLoop);
         }
 
         function init() {
+            loadKeybinds();
             initEvents();
+            loadSettings();
+            // 恢复上次登录的账号（刷新页面后保持登录）
+            try {
+                const s = localStorage.getItem(SESSION_KEY);
+                if (s && getAccounts()[s]) currentUser = s;
+            } catch(e) {}
+            migrateOldSaves();     // 旧版无账号存档 → 游客命名空间
+            loadProfileIntoGame(); // 载入当前身份的长期进度
+            updateAuthUI();
+            // 关闭/刷新页面前保存长期进度
+            window.addEventListener('beforeunload', () => { persistProfile(); });
+            volumeSfx.value = Math.round(sfxVolume * 100);
+            volumeMusic.value = Math.round(musicVolume * 100);
+            qualitySelect.value = qualitySetting;
+            initStars();
             updateUI();
             showStartOverlay();
             updateSaveSlotUI();
+            // 首次交互时启动音频 (浏览器要求用户手势后才能播放声音)
+            ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, ensureAudio));
             gameLoop();
         }
 
