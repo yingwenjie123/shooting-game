@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔫 星际射手 · 终极进化</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            background: #0a0f1e; min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden;
+        }
+        .game-container {
+            position: relative; background: #151e2a; padding: 20px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 840px; max-height: 98vh; overflow-y: auto;
+        }
+        canvas {
+            display: block; margin: 0 auto; border-radius: 12px; background: #0b1119; box-shadow: 0 0 0 2px #2e4b6e;
+            cursor: crosshair;
+        }
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center; margin: 12px 0 0;
+            color: #b7e1ff; flex-wrap: wrap; gap: 10px;
+        }
+        .score-board, .hp-board {
+            background: #1e2b3a; padding: 6px 18px; border-radius: 30px; border: 1px solid #3c6e9c; font-size: 1.1rem;
+        }
+        .hp-hearts { color: #ff5e6b; font-size: 1.2rem; }
+        .shield-display { color: #66d9ff; font-size: 1.2rem;}
+        .progress-container {
+            flex: 1; min-width: 100px; height: 14px; background: #0f1a24; border-radius: 10px;
+            border: 1px solid #3c6e9c; overflow: hidden;
+        }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3f9eff, #a855f7); transition: width 0.2s; }
+        button {
+            background: #2e4b6e; border: none; color: white; font-weight: bold; padding: 8px 20px;
+            border-radius: 30px; cursor: pointer; border: 1px solid #5f9bd1; transition: transform 0.1s, background 0.2s; outline: none;
+        }
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tip { color: #7d9fc0; font-size: 0.85rem; text-align: center; margin-top: 10px; }
+
+        #skillBtn { background: #8b5cf6; border-color: #a78bfa; position: relative; overflow: hidden; }
+        #skillBtn.cooldown { background: #4b5563; border-color: #6b7280; color: #9ca3af; }
+        .shield-charges { font-size: 1.2rem; margin-left: 5px; display: inline-flex; gap: 2px; }
+        
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; border-radius: 20px; background: rgba(10, 15, 26, 0.95);
+            z-index: 100; pointer-events: auto;
+        }
+        .overlay.hidden { display: none; }
+        .overlay h2 { font-size: 2.5rem; margin-bottom: 20px; color: #fff; text-shadow: 0 0 15px #3f9eff; }
+
+        .mode-select { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; width: 320px; }
+        .mode-card {
+            background: #1e2b3a; border: 2px solid #3c6e9c; border-radius: 15px; padding: 15px;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .mode-card:hover { border-color: #3f9eff; background: #25384a; transform: scale(1.02); }
+        .mode-card h3 {
+            font-size: 1.5rem; color: #ffd966; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        
+        .upgrade-panel {
+            background: #1e2b3a; padding: 20px; border-radius: 20px; border: 2px solid #3c6e9c;
+            text-align: center; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .upgrade-panel h3 { font-size: 1.8rem; margin-bottom: 15px; color: #ffd966; }
+        .upgrade-stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; font-size: 1.1rem; color: #b7e1ff; }
+        .gem-display { color: #ffd966; font-size: 1.5rem; font-weight: bold; }
+        .upgrade-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .upgrade-item {
+            display: flex; justify-content: space-between; align-items: center; background: #0f1a24;
+            padding: 10px 15px; border-radius: 12px; border: 1px solid #2e4b6e;
+        }
+        .upgrade-item span { color: #b7e1ff; font-size: 1rem; }
+        .upgrade-item .cost { color: #ffd966; font-weight: bold; }
+        .back-btn { margin-top: 10px; background: #6b3e3e; border-color: #a05a5a; }
+        .level-display { color: #ffd966; font-size: 1.1rem; }
+        .pause-indicator {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem;
+            color: rgba(255,255,255,0.8); text-shadow: 0 0 20px #3f9eff; display: none; z-index: 50; pointer-events: none;
+        }
+        .pause-indicator.show { display: block; }
+
+        .pause-menu {
+            background: #1e2b3a; padding: 30px; border-radius: 20px; border: 2px solid #3c6e9c;
+            text-align: center; max-width: 400px; width: 90%;
+        }
+        .pause-menu h3 { font-size: 2rem; margin-bottom: 25px; color: #ffd966; }
+        .pause-menu button { width: 100%; margin-bottom: 12px; padding: 12px; font-size: 1.1rem; }
+        .save-slot-info {
+            color: #b7e1ff; font-size: 0.9rem; margin-top: 15px; padding-top: 15px; border-top: 1px solid #3c6e9c;
+        }
+
+        .difficulty-panel {
+            background: #1e2b3a; padding: 25px; border-radius: 20px; border: 2px solid #3c6e9c;
+            text-align: center; max-width: 550px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .difficulty-panel h3 { font-size: 1.8rem; margin-bottom: 20px; color: #ffd966; }
+        .slider-group { margin-bottom: 15px; text-align: left; }
+        .slider-group label { display: block; color: #b7e1ff; margin-bottom: 8px; font-size: 1rem; }
+        .slider-group input[type="range"] {
+            width: 100%; height: 8px; border-radius: 4px; background: #0f1a24; outline: none;
+            -webkit-appearance: none; border: 1px solid #3c6e9c;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+            background: #3f9eff; cursor: pointer; box-shadow: 0 0 10px #3f9eff;
+        }
+        .slider-value { float: right; color: #ffd966; font-weight: bold; }
+        .difficulty-bonus {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0f1a24; padding: 10px 15px; border-radius: 12px; border: 1px solid #2e4b6e; margin-bottom: 20px;
+        }
+        .difficulty-bonus span { color: #b7e1ff; font-weight: bold; }
+        .difficulty-bonus button { background: #eab308; border-color: #facc15; color: #000; padding: 6px 15px; }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <canvas id="gameCanvas" width="800" height="550"></canvas>
+    <div class="pause-indicator" id="pauseIndicator">⏸</div>
+    <div class="status-bar">
+        <div class="score-board">💥 <span id="scoreDisplay">0</span></div>
+        <div class="level-display" id="levelDisplay">第 1 关</div>
+        <div class="hp-board">❤️ <span class="hp-hearts" id="hpDisplay">❤️❤️❤️</span></div>
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <button id="skillBtn">🛡️ 无敌 (E) <span class="shield-charges" id="shieldCharges">0/2</span></button>
+        <button id="pauseBtn">⏸ 暂停</button>
+        <button id="restartBtn">↺ 重来</button>
+    </div>
+    <div class="tip">← → 移动 | 空格/鼠标左键射击 | E键开启无敌护盾 | ESC 设置 | 满进度出Boss</div>
+
+    <!-- 开始界面 -->
+    <div id="startOverlay" class="overlay">
+        <h2>✨ 星际射手 ✨</h2>
+        <div class="mode-select">
+            <div class="mode-card" id="adventureModeBtn"><h3>⚔️ 冒险模式</h3></div>
+            <div class="mode-card" id="endlessModeBtn"><h3>♾️ 无限模式</h3></div>
+            <div class="mode-card" id="loadGameBtn" style="border-color: #fbbf24;">
+                <h3>📂 继续游戏</h3>
+                <div style="font-size:0.8rem; color:#7d9fc0; margin-top:5px;" id="saveInfo">（无存档）</div>
+            </div>
+        </div>
+        <div style="display:flex; gap:15px;">
+            <button id="upgradeBtn" style="font-size: 1.1rem; padding: 10px 25px;">⚡ 升级中心</button>
+            <button id="difficultyBtn" style="font-size: 1.1rem; padding: 10px 25px; background: #6b3e3e; border-color: #a05a5a;">⚙️ 难度调节</button>
+        </div>
+    </div>
+
+    <!-- 升级界面 -->
+    <div id="upgradeOverlay" class="overlay hidden">
+        <div class="upgrade-panel">
+            <h3>⚡ 升级中心</h3>
+            <div class="upgrade-stats">
+                <div>💎 水晶: <span id="gemDisplay" class="gem-display">0</span></div>
+                <div>📊 得分: <span id="upgradeScoreDisplay">0</span></div>
+            </div>
+            <div class="upgrade-list" id="upgradeList"></div>
+            <button id="closeUpgradeBtn" class="back-btn">← 返回</button>
+        </div>
+    </div>
+
+    <!-- 暂停/设置菜单 -->
+    <div id="pauseOverlay" class="overlay hidden">
+        <div class="pause-menu">
+            <h3>⏸ 游戏暂停</h3>
+            <button id="resumeBtn">▶ 继续游戏</button>
+            <button id="saveAndExitBtn" style="background:#3c6e9c;">💾 保存并退出</button>
+            <button id="settingsBtn" style="background:#6b3e3e;">⚙️ 设置 (ESC)</button>
+            <div id="settingsPanel" style="display:none; margin-top:15px; text-align:left; color:#b7e1ff;">
+                <label style="display:block; margin:8px 0;">🔊 音效音量 <input type="range" min="0" max="100" value="80" style="width:100%;"></label>
+                <label style="display:block; margin:8px 0;">🎵 背景音乐 <input type="range" min="0" max="100" value="50" style="width:100%;"></label>
+                <label style="display:block; margin:8px 0;">🖥️ 画质 <select style="width:100%; background:#0f1a24; color:#b7e1ff; border:1px solid #3c6e9c; border-radius:6px; padding:6px;">
+                    <option>低</option><option selected>中</option><option>高</option>
+                </select></label>
+            </div>
+            <div class="save-slot-info" id="pauseSaveInfo"></div>
+        </div>
+    </div>
+
+    <!-- 难度调节界面 -->
+    <div id="difficultyOverlay" class="overlay hidden">
+        <div class="difficulty-panel">
+            <h3>⚙️ 自定义难度</h3>
+            <div class="slider-group">
+                <label>敌人生成速度 <span id="valSpawnRate" class="slider-value">1.0x</span></label>
+                <input type="range" id="sliderSpawnRate" min="0.5" max="10.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>敌人移动速度 <span id="valEnemySpeed" class="slider-value">1.0x</span></label>
+                <input type="range" id="sliderEnemySpeed" min="0.5" max="10.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>小怪血量倍率 <span id="valEnemyHp" class="slider-value">1.0x</span></label>
+                <input type="range" id="sliderEnemyHp" min="0.5" max="10.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>Boss生命值 <span id="valBossHp" class="slider-value">1.0x</span></label>
+                <input type="range" id="sliderBossHp" min="0.5" max="10.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>Boss攻击频率 <span id="valBossRate" class="slider-value">1.0x</span></label>
+                <input type="range" id="sliderBossRate" min="0.5" max="10.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>Boss进度条阈值 (杀怪数) <span id="valBossThreshold" class="slider-value">50</span></label>
+                <input type="range" id="sliderBossThreshold" min="50" max="500" step="10" value="50">
+            </div>
+            <div class="difficulty-bonus">
+                <span>💀 难度翻倍 (增加所有难度)</span>
+                <button id="btnDoubleDifficulty">当前: 1.0x</button>
+            </div>
+            <button id="closeDifficultyBtn" class="back-btn" style="width: 100%;">← 保存并返回</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // 元素引用
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreSpan = document.getElementById('scoreDisplay');
+        const hpSpan = document.getElementById('hpDisplay');
+        const gemSpan = document.getElementById('gemDisplay');
+        const upgradeScoreSpan = document.getElementById('upgradeScoreDisplay');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const progressBar = document.getElementById('progressBar');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const skillBtn = document.getElementById('skillBtn');
+        const shieldChargesSpan = document.getElementById('shieldCharges');
+        const pauseIndicator = document.getElementById('pauseIndicator');
+        const startOverlay = document.getElementById('startOverlay');
+        const upgradeOverlay = document.getElementById('upgradeOverlay');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const difficultyOverlay = document.getElementById('difficultyOverlay');
+        const upgradeListEl = document.getElementById('upgradeList');
+        
+        const adventureModeBtn = document.getElementById('adventureModeBtn');
+        const endlessModeBtn = document.getElementById('endlessModeBtn');
+        const loadGameBtn = document.getElementById('loadGameBtn');
+        const upgradeBtn = document.getElementById('upgradeBtn');
+        const difficultyBtn = document.getElementById('difficultyBtn');
+        const closeUpgradeBtn = document.getElementById('closeUpgradeBtn');
+        const closeDifficultyBtn = document.getElementById('closeDifficultyBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const saveAndExitBtn = document.getElementById('saveAndExitBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const saveInfo = document.getElementById('saveInfo');
+        const pauseSaveInfo = document.getElementById('pauseSaveInfo');
+        
+        // 难度控件
+        const sliderSpawnRate = document.getElementById('sliderSpawnRate');
+        const sliderEnemySpeed = document.getElementById('sliderEnemySpeed');
+        const sliderEnemyHp = document.getElementById('sliderEnemyHp');
+        const sliderBossHp = document.getElementById('sliderBossHp');
+        const sliderBossRate = document.getElementById('sliderBossRate');
+        const sliderBossThreshold = document.getElementById('sliderBossThreshold');
+        const btnDoubleDifficulty = document.getElementById('btnDoubleDifficulty');
+
+        const CW = 800, CH = 550;
+        const SAVE_KEY = 'interstellar_shooter_save_v9';
+
+        // 全局状态
+        let score = 0, hp = 3, maxHp = 3, gems = 200;
+        let gameOver = false, gameRunning = false, paused = false;
+        let gameMode = 'adventure';
+        let currentLevel = 1, progress = 0, killCount = 0;
+        
+        // Boss
+        let bossActive = false, bossHP = 0, bossMaxHP = 0;
+        let boss = null, bossShootTimer = 0, bossMoveDirection = 1;
+        let bossSkillTriggers = { 80: false, 50: false, 20: false };
+        let bossShieldTimer = 0;
+
+        // 护盾系统
+        const MAX_SHIELD_CHARGES = 2;
+        let shieldCharges = 2;
+        let shieldRechargeTimer = 0;
+        let activeShieldTime = 0, activeShieldCooldown = 0, itemShieldTime = 0;
+
+        // 升级
+        let upgradeLevels = { 
+            bulletCount: 1, spread: 1, fireRate: 1, life: 1, 
+            activeShieldDuration: 1, activeShieldCooldown: 1, damage: 1
+        };
+        const UPGRADE_CONFIG = [
+            { key: 'bulletCount', name: '📈 竖向弹幕', baseCost: 15, maxLevel: 100 },
+            { key: 'spread', name: '📐 横向散射', baseCost: 20, maxLevel: 100 },
+            { key: 'fireRate', name: '⚡ 攻击速度', baseCost: 25, maxLevel: 100 },
+            { key: 'life', name: '❤️ 生命上限', baseCost: 30, maxLevel: 100 },
+            { key: 'activeShieldDuration', name: '🛡️ 无敌时长', baseCost: 40, maxLevel: 100 },
+            { key: 'activeShieldCooldown', name: '⏱️ 技能冷却', baseCost: 40, maxLevel: 100 },
+            { key: 'damage', name: '💥 子弹伤害', baseCost: 35, maxLevel: 100 },
+        ];
+
+        // 临时加成
+        let tempUpgrades = { fireRate: 0, bulletCount: 0 };
+
+        // 难度配置
+        let difficulty = { 
+            spawnRate: 1.0, enemySpeed: 1.0, enemyHp: 1.0, bossHp: 1.0, bossRate: 1.0, 
+            bossThreshold: 50, multiplier: 1.0 
+        };
+
+        // 玩家
+        const player = { x: CW/2, y: CH-60, w: 36, h: 28, speed: 6, color: '#7ae0ff' };
+        let bullets = [], enemies = [], smallEnemies = [], enemyBullets = [], specialEnemies = [], powerups = [];
+        let shootTimer = 0, enemySpawnTimer = 0, gameTime = 0, specialSpawnTimer = 0;
+        
+        const BULLET_SPEED = -8, BULLET_WIDTH = 4, BULLET_HEIGHT = 14;
+        const ENEMY_WIDTH = 36, ENEMY_HEIGHT = 36, SMALL_SIZE = 18;
+
+        // 键盘按键
+        let keys = { left: false, right: false, space: false };
+        let mouseShoot = false;
+
+        // 辅助函数
+        const getFireRateValue = () => 1.0 + (upgradeLevels.fireRate - 1) * 0.1 + tempUpgrades.fireRate * 0.1;
+        const getFireCooldown = () => Math.max(2, Math.floor(60 / (getFireRateValue() * 6))); 
+        const getActiveShieldDuration = () => Math.floor(300 + (upgradeLevels.activeShieldDuration - 1) * 12);
+        const getActiveShieldCooldown = () => Math.max(60, Math.floor(1800 - (upgradeLevels.activeShieldCooldown - 1) * 12));
+        const getDamage = () => 1 + (upgradeLevels.damage - 1) * 0.5;
+        
+        const getBulletCount = () => upgradeLevels.bulletCount + tempUpgrades.bulletCount;
+        const getSpreadCount = () => upgradeLevels.spread;
+        const getMaxHp = () => 3 + (upgradeLevels.life - 1) * 1;
+        const getUpgradeCost = (config) => Math.floor(config.baseCost * (1 + (upgradeLevels[config.key] - 1) * 0.2));
+
+        const getDiffSpawn = () => difficulty.spawnRate * difficulty.multiplier;
+        const getDiffSpeed = () => difficulty.enemySpeed * difficulty.multiplier;
+        const getDiffEnemyHp = () => difficulty.enemyHp * difficulty.multiplier;
+        const getDiffBossHp = () => difficulty.bossHp * difficulty.multiplier;
+        const getDiffBossRate = () => difficulty.bossRate * difficulty.multiplier;
+
+        const getEnemyHp = () => Math.max(1, Math.floor((1 + (currentLevel - 1) * 2) * getDiffEnemyHp()));
+        const getSpecialHp = () => Math.max(1, Math.floor((2 + (currentLevel - 1) * 2) * getDiffEnemyHp()));
+
+        // UI更新
+        function updateUI() {
+            scoreSpan.textContent = score;
+            let hearts = '';
+            for (let i = 0; i < Math.min(hp, 10); i++) hearts += '❤️';
+            if (hp > 10) hearts += `+${hp-10}`;
+            if (hp === 0) hearts = '💀';
+            hpSpan.textContent = hearts;
+            
+            gemSpan.textContent = gems;
+            upgradeScoreSpan.textContent = score;
+            
+            progressBar.style.width = Math.min(100, (killCount / difficulty.bossThreshold) * 100) + '%';
+            
+            if (gameMode === 'adventure') {
+                levelDisplay.textContent = `第 ${currentLevel} / 5 关`;
+            } else {
+                levelDisplay.textContent = `无限模式 · 关卡 ${currentLevel}`;
+            }
+            
+            pauseBtn.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+            pauseIndicator.classList.toggle('show', paused);
+
+            shieldChargesSpan.textContent = `${shieldCharges}/${MAX_SHIELD_CHARGES}`;
+            if (activeShieldCooldown > 0 && shieldCharges === 0) {
+                skillBtn.classList.add('cooldown');
+                skillBtn.innerHTML = `⏳ ${Math.ceil(activeShieldCooldown / 60)}s <span class="shield-charges">${shieldCharges}/${MAX_SHIELD_CHARGES}</span>`;
+            } else {
+                skillBtn.classList.remove('cooldown');
+                skillBtn.innerHTML = `🛡️ 无敌 (E) <span class="shield-charges">${shieldCharges}/${MAX_SHIELD_CHARGES}</span>`;
+            }
+        }
+
+        // 存档
+        function updateSaveSlotUI() {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    saveInfo.textContent = `存档: 第${data.currentLevel}关 | 得分:${data.score} | ${data.gameMode === 'adventure' ? '冒险' : '无限'}`;
+                    pauseSaveInfo.textContent = `当前存档: 第${data.currentLevel}关 | 得分:${data.score}`;
+                } catch(e) { saveInfo.textContent = '（存档损坏）'; }
+            } else {
+                saveInfo.textContent = '（无存档）';
+                pauseSaveInfo.textContent = '当前无存档';
+            }
+        }
+
+        function saveGame() {
+            if (!gameRunning || gameOver) return false;
+            const saveData = {
+                score, hp, maxHp, gems, gameMode, currentLevel, progress, killCount,
+                upgradeLevels: { ...upgradeLevels },
+                tempUpgrades: { ...tempUpgrades },
+                shieldCharges, shieldRechargeTimer,
+                activeShieldTime, activeShieldCooldown, itemShieldTime,
+                bossActive, bossHP, bossMaxHP,
+                boss: boss ? { ...boss } : null,
+                bossShootTimer, bossMoveDirection, bossShieldTimer,
+                bossSkillTriggers: { ...bossSkillTriggers },
+                gameTime, playerX: player.x,
+                difficulty: { ...difficulty }
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+            updateSaveSlotUI();
+            return true;
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (!saved) return false;
+            try {
+                const data = JSON.parse(saved);
+                score = data.score || 0; hp = data.hp || 3; maxHp = data.maxHp || 3; gems = data.gems || 200;
+                gameMode = data.gameMode || 'adventure'; currentLevel = data.currentLevel || 1;
+                progress = data.progress || 0; killCount = data.killCount || 0;
+                upgradeLevels = data.upgradeLevels || { bulletCount: 1, spread: 1, fireRate: 1, life: 1, activeShieldDuration: 1, activeShieldCooldown: 1, damage: 1 };
+                tempUpgrades = data.tempUpgrades || { fireRate: 0, bulletCount: 0 };
+                shieldCharges = data.shieldCharges !== undefined ? data.shieldCharges : 2;
+                shieldRechargeTimer = data.shieldRechargeTimer || 0;
+                activeShieldTime = data.activeShieldTime || 0; activeShieldCooldown = data.activeShieldCooldown || 0; itemShieldTime = data.itemShieldTime || 0;
+                bossActive = data.bossActive || false; bossHP = data.bossHP || 0; bossMaxHP = data.bossMaxHP || 0;
+                boss = data.boss || null; bossShootTimer = data.bossShootTimer || 0; bossMoveDirection = data.bossMoveDirection || 1;
+                bossShieldTimer = data.bossShieldTimer || 0;
+                bossSkillTriggers = data.bossSkillTriggers || { 80: false, 50: false, 20: false };
+                gameTime = data.gameTime || 0; player.x = data.playerX || CW / 2;
+                difficulty = data.difficulty || { spawnRate: 1.0, enemySpeed: 1.0, enemyHp: 1.0, bossHp: 1.0, bossRate: 1.0, bossThreshold: 50, multiplier: 1.0 };
+
+                bullets = []; enemies = []; smallEnemies = []; enemyBullets = []; specialEnemies = []; powerups = [];
+                shootTimer = 0; enemySpawnTimer = 0; specialSpawnTimer = 120;
+                gameOver = false; gameRunning = true; paused = false;
+
+                sliderSpawnRate.value = difficulty.spawnRate;
+                sliderEnemySpeed.value = difficulty.enemySpeed;
+                sliderEnemyHp.value = difficulty.enemyHp || 1.0;
+                sliderBossHp.value = difficulty.bossHp;
+                sliderBossRate.value = difficulty.bossRate;
+                sliderBossThreshold.value = difficulty.bossThreshold;
+                btnDoubleDifficulty.textContent = `当前: ${difficulty.multiplier.toFixed(1)}x`;
+                updateDifficultyLabels();
+
+                hideOverlays(); updateUI(); return true;
+            } catch(e) { console.error('读档失败', e); return false; }
+        }
+
+        function clearSave() {
+            localStorage.removeItem(SAVE_KEY);
+            updateSaveSlotUI();
+        }
+
+        function resetGame(mode) {
+            gameMode = mode || 'adventure';
+            score = 0; hp = getMaxHp(); maxHp = getMaxHp();
+            gameOver = false; gameRunning = true; paused = false;
+            progress = 0; currentLevel = 1; killCount = 0;
+            bossActive = false; bossHP = 0; bossMaxHP = 0; boss = null; bossShootTimer = 0;
+            bossShieldTimer = 0;
+            bossSkillTriggers = { 80: false, 50: false, 20: false };
+            shieldCharges = 2; shieldRechargeTimer = 0;
+            activeShieldTime = 0; activeShieldCooldown = 0; itemShieldTime = 0;
+            bullets = []; enemies = []; smallEnemies = []; enemyBullets = []; specialEnemies = []; powerups = [];
+            shootTimer = 0; enemySpawnTimer = 0; gameTime = 0; specialSpawnTimer = 120;
+            player.x = CW / 2;
+            keys = { left: false, right: false, space: false };
+            mouseShoot = false;
+            tempUpgrades = { fireRate: 0, bulletCount: 0 };
+
+            updateUI(); clearSave();
+        }
+
+        // 生成陨石
+        function spawnEnemy() {
+            const x = Math.random() * (CW - ENEMY_WIDTH);
+            let baseSpeed = gameMode === 'endless' ? 1.2 + currentLevel * 0.15 : 1.2 + (currentLevel - 1) * 0.2;
+            baseSpeed *= getDiffSpeed();
+            enemies.push({
+                x, y: -ENEMY_HEIGHT, w: ENEMY_WIDTH, h: ENEMY_HEIGHT,
+                speed: baseSpeed + Math.random() * 0.8,
+                hp: getEnemyHp(), maxHp: getEnemyHp(),
+                color: `hsl(${Math.floor(Math.random() * 20 + 350)}, 80%, 65%)`
+            });
+        }
+
+        // 生成特殊小怪
+        function spawnSpecialEnemy() {
+            const x = Math.random() * (CW - ENEMY_WIDTH);
+            const typeRoll = Math.random();
+            let type = 1;
+            if (typeRoll > 0.7) type = 3;
+            else if (typeRoll > 0.4) type = 2;
+
+            specialEnemies.push({
+                x, y: -ENEMY_HEIGHT, w: ENEMY_WIDTH, h: ENEMY_HEIGHT,
+                speed: (0.6 + Math.random() * 0.4) * getDiffSpeed(),
+                shootTimer: 60, shootCooldown: Math.max(60, 120 - Math.min(currentLevel * 5, 60)),
+                type: type, hp: getSpecialHp(), maxHp: getSpecialHp(),
+                color: type === 1 ? '#d97706' : type === 2 ? '#8b5cf6' : '#ec4899'
+            });
+        }
+
+        function shootBullet() {
+            if (gameOver || !gameRunning || paused) return;
+            const bulletCount = getBulletCount();
+            const spreadCount = getSpreadCount();
+            const baseX = player.x + player.w / 2 - BULLET_WIDTH / 2;
+            const baseY = player.y - 8;
+            for (let i = 0; i < bulletCount; i++) {
+                const bulletY = baseY - i * 8;
+                for (let j = 0; j < spreadCount; j++) {
+                    let angle = 0;
+                    if (spreadCount > 1) {
+                        const t = (j / (spreadCount - 1)) * 2 - 1;
+                        angle = t * 0.25;
+                    }
+                    const vx = Math.sin(angle) * BULLET_SPEED;
+                    const vy = Math.cos(angle) * BULLET_SPEED;
+                    bullets.push({
+                        x: baseX, y: bulletY, w: BULLET_WIDTH, h: BULLET_HEIGHT,
+                        speed: vy, vx: vx, 
+                        baseSpeed: vy, baseVx: vx,
+                        color: '#f0e86b', damage: getDamage()
+                    });
+                }
+            }
+        }
+
+        function rectCollide(r1, r2) {
+            return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
+        }
+
+        // 生成Boss
+        function spawnBoss() {
+            bossActive = true;
+            let baseHp;
+            if (gameMode === 'endless') baseHp = 200 + (currentLevel - 1) * 400;
+            else baseHp = 200 * Math.pow(2, currentLevel - 1);
+            bossMaxHP = Math.floor(baseHp * getDiffBossHp());
+            bossHP = bossMaxHP;
+            bossShootTimer = Math.max(10, (70 - currentLevel * 8) / getDiffBossRate());
+            boss = { x: CW/2 - 60, y: 30, w: 120, h: 80, color: '#a855f7' };
+            bossMoveDirection = 1;
+            bossShieldTimer = 0;
+            bossSkillTriggers = { 80: false, 50: false, 20: false };
+        }
+
+        function getBossShootCooldown() {
+            const hpPercent = bossHP / bossMaxHP;
+            let baseCooldown = gameMode === 'endless' ? Math.max(8, 45 - currentLevel * 4) : Math.max(12, 55 - currentLevel * 7);
+            const healthFactor = 1 - (1 - hpPercent) * 0.5;
+            return Math.max(4, baseCooldown * healthFactor / getDiffBossRate());
+        }
+
+        function bossShoot() {
+            if (!boss) return;
+            const mode = Math.floor(Math.random() * 3);
+            const centerX = boss.x + boss.w / 2;
+            const centerY = boss.y + boss.h;
+
+            if (mode === 0) {
+                const count = 4 + Math.min(currentLevel, 6);
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI / count) * i - Math.PI/2 + Math.PI/4;
+                    const vx = Math.cos(angle) * 2.5, vy = Math.sin(angle) * 2.5;
+                    smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#c084fc' });
+                }
+            } else if (mode === 1) {
+                const dx = player.x + player.w/2 - centerX;
+                const dy = player.y + player.h/2 - centerY;
+                const len = Math.hypot(dx, dy);
+                const baseSpeed = 2.5 + currentLevel * 0.1;
+                const vx = (dx/len) * baseSpeed, vy = (dy/len) * baseSpeed;
+                smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#f87171' });
+            } else {
+                const count = 8 + Math.min(currentLevel * 2, 12);
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 / count) * i;
+                    const vx = Math.cos(angle) * 2.0, vy = Math.sin(angle) * 2.0;
+                    smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#fbbf24' });
+                }
+            }
+        }
+
+        function bossSkillBurst() {
+            if (!boss) return;
+            const centerX = boss.x + boss.w / 2;
+            const centerY = boss.y + boss.h / 2;
+            const count = 30 + currentLevel * 5;
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+                const speed = 1.5 + Math.random() * 1.5;
+                const vx = Math.cos(angle) * speed, vy = Math.sin(angle) * speed;
+                smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#ff00cc' });
+            }
+            for (let i = 0; i < 5; i++) {
+                const dx = player.x + player.w/2 - centerX + (Math.random()-0.5)*100;
+                const dy = player.y + player.h/2 - centerY + (Math.random()-0.5)*100;
+                const len = Math.hypot(dx, dy);
+                const vx = (dx/len) * 4, vy = (dy/len) * 4;
+                smallEnemies.push({ x: centerX, y: centerY, w: SMALL_SIZE, h: SMALL_SIZE, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#ff0000' });
+            }
+        }
+
+        function spawnPowerup(x, y) {
+            const types = ['fireRate', 'bulletCount', 'shield', 'life'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            powerups.push({
+                x, y, w: 20, h: 20, type: type, speed: 1.5,
+                color: type === 'fireRate' ? '#3b82f6' : type === 'bulletCount' ? '#f59e0b' : type === 'shield' ? '#06b6d4' : '#ef4444',
+                symbol: type === 'fireRate' ? '⚡' : type === 'bulletCount' ? '🎯' : type === 'shield' ? '🛡️' : '❤️'
+            });
+        }
+
+        function damagePlayer() {
+            if (activeShieldTime > 0 || itemShieldTime > 0) return;
+            hp = Math.max(0, hp - 1);
+            if (hp <= 0) {
+                gameOver = true; gameRunning = false;
+                gems += Math.floor(score / 80);
+                clearSave(); showStartOverlay();
+            }
+            updateUI();
+        }
+
+        function applyPowerup(type) {
+            if (type === 'fireRate') tempUpgrades.fireRate++;
+            else if (type === 'bulletCount') tempUpgrades.bulletCount++;
+            else if (type === 'shield') {
+                if (shieldCharges < MAX_SHIELD_CHARGES) {
+                    shieldCharges++;
+                    if (shieldCharges === MAX_SHIELD_CHARGES) shieldRechargeTimer = 0;
+                }
+            }
+            else if (type === 'life') hp = Math.min(getMaxHp(), hp + 1);
+            updateUI();
+        }
+
+        function applySlowdownToBullet(b) {
+            const dx = (b.x + b.w/2) - (player.x + player.w/2);
+            const dy = (b.y + b.h/2) - (player.y + player.h/2);
+            const dist = Math.hypot(dx, dy);
+            let ratio = 1.0;
+            if (dist < 200) ratio = Math.max(0.5, dist / 200);
+            b.speed = b.baseSpeed * ratio;
+            b.vx = b.baseVx * ratio;
+        }
+
+        // 核心更新
+        function update() {
+            if (gameOver || !gameRunning || paused) return;
+            gameTime++;
+
+            if (activeShieldTime > 0) activeShieldTime--;
+            if (itemShieldTime > 0) itemShieldTime--;
+            
+            if (shieldCharges < MAX_SHIELD_CHARGES) {
+                shieldRechargeTimer++;
+                const rechargeTime = 900;
+                if (shieldRechargeTimer >= rechargeTime) {
+                    shieldCharges++;
+                    shieldRechargeTimer = 0;
+                    updateUI();
+                }
+            } else {
+                shieldRechargeTimer = 0;
+            }
+            
+            if (activeShieldCooldown > 0) {
+                activeShieldCooldown--;
+                if (activeShieldCooldown === 0) updateUI();
+            }
+
+            if (bossShieldTimer > 0) bossShieldTimer--;
+
+            if (keys.left) player.x = Math.max(0, player.x - player.speed);
+            if (keys.right) player.x = Math.min(CW - player.w, player.x + player.speed);
+
+            if (shootTimer > 0) shootTimer--;
+            if ((keys.space || mouseShoot) && shootTimer <= 0) {
+                shootBullet();
+                shootTimer = getFireCooldown();
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx || 0; b.y += b.speed;
+                if (b.y + b.h < 0 || b.y > CH || b.x < -50 || b.x > CW + 50) bullets.splice(i, 1);
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.y += e.speed;
+                if (e.y > CH + 30) enemies.splice(i, 1);
+            }
+
+            for (let i = specialEnemies.length - 1; i >= 0; i--) {
+                const s = specialEnemies[i];
+                s.y += s.speed;
+                if (s.y > CH + 30) { specialEnemies.splice(i, 1); continue; }
+
+                s.shootTimer--;
+                if (s.shootTimer <= 0) {
+                    const dx = player.x + player.w/2 - (s.x + s.w/2);
+                    const dy = player.y + player.h/2 - (s.y + s.h/2);
+                    const baseAngle = Math.atan2(dy, dx);
+                    
+                    if (s.type === 1) {
+                        const len = Math.hypot(dx, dy);
+                        const vx = (dx/len) * 2.5, vy = (dy/len) * 2.5;
+                        enemyBullets.push({ x: s.x + s.w/2, y: s.y + s.h, w: 6, h: 6, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#f87171' });
+                    } else if (s.type === 2) {
+                        for (let offset = -0.2; offset <= 0.2; offset += 0.4) {
+                            const angle = baseAngle + offset;
+                            const vx = Math.cos(angle) * 2.5, vy = Math.sin(angle) * 2.5;
+                            enemyBullets.push({ x: s.x + s.w/2, y: s.y + s.h, w: 6, h: 6, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#f87171' });
+                        }
+                    } else if (s.type === 3) {
+                        for (let offset = -0.3; offset <= 0.3; offset += 0.3) {
+                            const angle = baseAngle + offset;
+                            const vx = Math.cos(angle) * 2.5, vy = Math.sin(angle) * 2.5;
+                            enemyBullets.push({ x: s.x + s.w/2, y: s.y + s.h, w: 6, h: 6, speed: vy, vx: vx, baseSpeed: vy, baseVx: vx, color: '#f87171' });
+                        }
+                    }
+                    s.shootTimer = s.shootCooldown;
+                }
+            }
+
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const eb = enemyBullets[i];
+                applySlowdownToBullet(eb);
+                eb.x += eb.vx; eb.y += eb.speed;
+                if (eb.y > CH + 20 || eb.y < -20 || eb.x < -20 || eb.x > CW + 20) enemyBullets.splice(i, 1);
+            }
+
+            for (let i = smallEnemies.length - 1; i >= 0; i--) {
+                const s = smallEnemies[i];
+                applySlowdownToBullet(s);
+                s.x += s.vx; s.y += s.speed;
+                if (s.y > CH + 30 || s.x < -30 || s.x > CW + 30) smallEnemies.splice(i, 1);
+            }
+
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.y += p.speed;
+                if (p.y > CH + 30) powerups.splice(i, 1);
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                let used = false;
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (rectCollide(bullet, enemies[j])) {
+                        enemies[j].hp -= bullet.damage;
+                        used = true;
+                        if (enemies[j].hp <= 0) {
+                            enemies.splice(j, 1); score += 10; gems += 1;
+                            if (!bossActive) { killCount++; progress = Math.min(100, (killCount / difficulty.bossThreshold) * 100); }
+                        }
+                        updateUI(); 
+                        break;
+                    }
+                }
+                if (used) { bullets.splice(i, 1); continue; }
+
+                for (let j = specialEnemies.length - 1; j >= 0; j--) {
+                    if (rectCollide(bullet, specialEnemies[j])) {
+                        specialEnemies[j].hp -= bullet.damage;
+                        used = true;
+                        if (specialEnemies[j].hp <= 0) {
+                            specialEnemies.splice(j, 1); score += 20; gems += 2;
+                            if (!bossActive) { killCount += 2; progress = Math.min(100, (killCount / difficulty.bossThreshold) * 100); }
+                            spawnPowerup(bullet.x, bullet.y);
+                        }
+                        updateUI(); 
+                        break;
+                    }
+                }
+                if (used) { bullets.splice(i, 1); continue; }
+
+                if (bossActive && boss && bossShieldTimer <= 0 && rectCollide(bullet, boss)) {
+                    bossHP -= bullet.damage; score += 5;
+                    const hpPercent = (bossHP / bossMaxHP) * 100;
+                    if (hpPercent <= 80 && !bossSkillTriggers[80]) { bossSkillTriggers[80] = true; bossSkillBurst(); }
+                    if (hpPercent <= 50 && !bossSkillTriggers[50]) { bossSkillTriggers[50] = true; bossSkillBurst(); }
+                    if (hpPercent <= 20 && !bossSkillTriggers[20]) { 
+                        bossSkillTriggers[20] = true; 
+                        bossSkillBurst(); 
+                        bossShieldTimer = 120;
+                    }
+                    
+                    if (bossHP <= 0) {
+                        bossActive = false; boss = null;
+                        score += 200; gems += 30; progress = 0; killCount = 0;
+                        spawnPowerup(CW/2, CH/2);
+                        if (gameMode === 'adventure') {
+                            currentLevel++;
+                            if (currentLevel > 5) { gameOver = true; gameRunning = false; gems += 100; clearSave(); showStartOverlay(); }
+                        } else {
+                            currentLevel++;
+                        }
+                    }
+                    updateUI(); bullets.splice(i, 1); continue;
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (rectCollide(player, enemies[i])) { enemies.splice(i, 1); damagePlayer(); }
+            }
+            for (let i = specialEnemies.length - 1; i >= 0; i--) {
+                if (rectCollide(player, specialEnemies[i])) { specialEnemies.splice(i, 1); damagePlayer(); }
+            }
+            for (let i = smallEnemies.length - 1; i >= 0; i--) {
+                if (rectCollide(player, smallEnemies[i])) { smallEnemies.splice(i, 1); damagePlayer(); }
+            }
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                if (rectCollide(player, enemyBullets[i])) { enemyBullets.splice(i, 1); damagePlayer(); }
+            }
+            if (bossActive && boss && bossShieldTimer <= 0 && rectCollide(player, boss)) {
+                damagePlayer(); player.x = Math.max(0, Math.min(CW - player.w, player.x - 30));
+            }
+
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                if (rectCollide(player, powerups[i])) {
+                    applyPowerup(powerups[i].type);
+                    powerups.splice(i, 1);
+                }
+            }
+
+            if (bossActive && boss) {
+                boss.x += bossMoveDirection * 2;
+                if (boss.x <= 20 || boss.x + boss.w >= CW - 20) bossMoveDirection *= -1;
+
+                bossShootTimer--;
+                if (bossShootTimer <= 0 && bossShieldTimer <= 0) {
+                    bossShoot();
+                    bossShootTimer = getBossShootCooldown();
+                }
+            }
+
+            if (!bossActive && killCount >= difficulty.bossThreshold) {
+                spawnBoss();
+                killCount = 0;
+                progress = 0;
+            }
+
+            if (!gameOver && !paused) {
+                const baseDelay = gameMode === 'endless' ? Math.max(8, 35 - currentLevel * 3) : Math.max(10, 40 - currentLevel * 4);
+                if (enemySpawnTimer <= 0) {
+                    spawnEnemy();
+                    if (gameTime > 600 && Math.random() < 0.3) spawnEnemy();
+                    enemySpawnTimer = Math.max(2, baseDelay / getDiffSpawn());
+                } else {
+                    enemySpawnTimer--;
+                }
+
+                specialSpawnTimer--;
+                if (specialSpawnTimer <= 0) {
+                    spawnSpecialEnemy();
+                    specialSpawnTimer = Math.max(30, 180 - currentLevel * 10);
+                }
+            }
+        }
+
+        // 绘制
+        function draw() {
+            ctx.clearRect(0, 0, CW, CH);
+            ctx.fillStyle = '#0b1119'; ctx.fillRect(0, 0, CW, CH);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            for (let i = 0; i < 100; i++) {
+                if (i % 2 === 0) continue;
+                ctx.beginPath(); ctx.arc((i*37)%CW, (i*71)%CH, (i%3)*0.7+0.5, 0, Math.PI*2); ctx.fill();
+            }
+
+            if (activeShieldTime > 0) {
+                ctx.shadowColor = '#eab308'; ctx.shadowBlur = 40;
+                ctx.strokeStyle = '#facc15'; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.arc(player.x + player.w/2, player.y + player.h/2, 35, 0, Math.PI*2); ctx.stroke();
+            } else if (itemShieldTime > 0) {
+                ctx.shadowColor = '#66d9ff'; ctx.shadowBlur = 25;
+                ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(player.x + player.w/2, player.y + player.h/2, 30, 0, Math.PI*2); ctx.stroke();
+            }
+            
+            ctx.shadowColor = '#7ae0ff'; ctx.shadowBlur = 18; ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.w/2, player.y);
+            ctx.lineTo(player.x + player.w, player.y + player.h);
+            ctx.lineTo(player.x, player.y + player.h);
+            ctx.closePath(); ctx.fill();
+            
+            ctx.shadowBlur = 20; ctx.fillStyle = '#ffb347';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.w/2, player.y + player.h + 6);
+            ctx.lineTo(player.x + player.w/2 - 8, player.y + player.h + 2);
+            ctx.lineTo(player.x + player.w/2 + 8, player.y + player.h + 2);
+            ctx.closePath(); ctx.fill();
+
+            ctx.shadowColor = '#f0e86b'; ctx.shadowBlur = 12;
+            for (const b of bullets) {
+                ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h);
+                ctx.fillStyle = '#fff9c4'; ctx.fillRect(b.x + 1, b.y + 2, b.w - 2, b.h - 6);
+            }
+
+            ctx.shadowColor = '#f87171'; ctx.shadowBlur = 10;
+            for (const eb of enemyBullets) {
+                ctx.fillStyle = eb.color;
+                ctx.beginPath(); ctx.arc(eb.x, eb.y, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(eb.x, eb.y, 2, 0, Math.PI*2); ctx.fill();
+            }
+
+            for (const e of enemies) {
+                ctx.shadowColor = '#ff4d4d'; ctx.shadowBlur = 18; ctx.fillStyle = e.color;
+                ctx.beginPath(); ctx.ellipse(e.x + e.w/2, e.y + e.h/2, e.w/2, e.h/2, 0, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 5; ctx.fillStyle = '#3a1e1e';
+                ctx.beginPath(); ctx.arc(e.x + e.w*0.3, e.y + e.h*0.3, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#5e2e2e';
+                ctx.beginPath(); ctx.arc(e.x + e.w*0.7, e.y + e.h*0.6, 4, 0, Math.PI*2); ctx.fill();
+                if (e.hp < e.maxHp) {
+                    ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#fff'; ctx.fillText(`${Math.ceil(e.hp)}/${e.maxHp}`, e.x + e.w/2, e.y - 2);
+                }
+            }
+
+            for (const s of specialEnemies) {
+                ctx.shadowColor = s.color; ctx.shadowBlur = 20; ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.ellipse(s.x + s.w/2, s.y + s.h/2, s.w/2, s.h/2, 0, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 5; ctx.fillStyle = '#fbbf24';
+                ctx.beginPath(); ctx.arc(s.x + s.w/2, s.y + s.h/2, 6, 0, Math.PI*2); ctx.fill();
+                ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#fff'; ctx.fillText(s.type, s.x + s.w/2, s.y + s.h/2);
+                if (s.hp < s.maxHp) {
+                    ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#fff'; ctx.fillText(`${Math.ceil(s.hp)}/${s.maxHp}`, s.x + s.w/2, s.y - 2);
+                }
+            }
+
+            for (const s of smallEnemies) {
+                ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 12; ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.arc(s.x + s.w/2, s.y + s.h/2, s.w/2, 0, Math.PI*2); ctx.fill();
+            }
+
+            for (const p of powerups) {
+                ctx.shadowColor = p.color; ctx.shadowBlur = 15;
+                ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#fff'; ctx.fillText(p.symbol, p.x + p.w/2, p.y + p.h/2);
+            }
+
+            if (bossActive && boss) {
+                if (bossShieldTimer > 0) {
+                    ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 40;
+                    ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.arc(boss.x + boss.w/2, boss.y + boss.h/2, boss.w/1.5, 0, Math.PI*2); ctx.stroke();
+                }
+                
+                ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 25; ctx.fillStyle = boss.color;
+                ctx.beginPath(); ctx.ellipse(boss.x + boss.w/2, boss.y + boss.h/2, boss.w/2, boss.h/2, 0, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 10; ctx.fillStyle = '#ff3b3b';
+                ctx.beginPath(); ctx.arc(boss.x + boss.w*0.35, boss.y + boss.h*0.4, 8, 0, Math.PI*2); ctx.arc(boss.x + boss.w*0.65, boss.y + boss.h*0.4, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(boss.x + boss.w*0.33, boss.y + boss.h*0.38, 3, 0, Math.PI*2); ctx.arc(boss.x + boss.w*0.63, boss.y + boss.h*0.38, 3, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#330000';
+                ctx.fillRect(boss.x, boss.y - 15, boss.w, 8);
+                ctx.fillStyle = '#ff3b3b';
+                ctx.fillRect(boss.x, boss.y - 15, boss.w * (bossHP / bossMaxHP), 8);
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(10,0,20,0.8)'; ctx.fillRect(0,0,CW,CH);
+                ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffb7b7'; ctx.fillText('💀 游戏结束', CW/2, CH/2 - 30);
+                ctx.font = '24px sans-serif'; ctx.fillStyle = '#c9e1ff';
+                ctx.fillText('点击“重来”继续', CW/2, CH/2 + 40);
+            }
+        }
+
+        // 界面控制
+        function showStartOverlay() {
+            startOverlay.classList.remove('hidden');
+            upgradeOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            difficultyOverlay.classList.add('hidden');
+            gameRunning = false; paused = false;
+            updateSaveSlotUI();
+        }
+        function hideOverlays() {
+            startOverlay.classList.add('hidden');
+            upgradeOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            difficultyOverlay.classList.add('hidden');
+        }
+        function showUpgradeOverlay() {
+            startOverlay.classList.add('hidden'); pauseOverlay.classList.add('hidden'); difficultyOverlay.classList.add('hidden');
+            upgradeOverlay.classList.remove('hidden');
+            gameRunning = false; renderUpgradeList(); updateUI();
+        }
+        function showPauseOverlay() {
+            if (!gameRunning || gameOver) return;
+            paused = true; pauseOverlay.classList.remove('hidden');
+            difficultyOverlay.classList.add('hidden'); updateSaveSlotUI(); updateUI();
+        }
+        function hidePauseOverlay() { 
+            pauseOverlay.classList.add('hidden'); 
+            settingsPanel.style.display = 'none';
+        }
+
+        function renderUpgradeList() {
+            upgradeListEl.innerHTML = '';
+            UPGRADE_CONFIG.forEach(config => {
+                const level = upgradeLevels[config.key];
+                const cost = getUpgradeCost(config);
+                const isMax = level >= config.maxLevel;
+                const canAfford = gems >= cost && !isMax;
+
+                const item = document.createElement('div');
+                item.className = 'upgrade-item';
+                item.innerHTML = `
+                    <div style="text-align:left;">
+                        <span>${config.name} (Lv.${level}/${config.maxLevel})</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="cost">${isMax ? 'MAX' : '💎 ' + cost}</span>
+                        <button data-key="${config.key}" ${!canAfford || isMax ? 'disabled' : ''}>
+                            ${isMax ? '满级' : '升级'}
+                        </button>
+                    </div>
+                `;
+                upgradeListEl.appendChild(item);
+            });
+
+            upgradeListEl.querySelectorAll('button[data-key]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const key = btn.dataset.key;
+                    const config = UPGRADE_CONFIG.find(c => c.key === key);
+                    const level = upgradeLevels[key];
+                    const cost = getUpgradeCost(config);
+                    if (gems >= cost && level < config.maxLevel) {
+                        gems -= cost; upgradeLevels[key]++;
+                        if (key === 'life') hp = Math.min(getMaxHp(), hp + 2);
+                        updateUI(); renderUpgradeList();
+                    }
+                });
+            });
+        }
+
+        function updateDifficultyLabels() {
+            document.getElementById('valSpawnRate').textContent = parseFloat(sliderSpawnRate.value).toFixed(1) + 'x';
+            document.getElementById('valEnemySpeed').textContent = parseFloat(sliderEnemySpeed.value).toFixed(1) + 'x';
+            document.getElementById('valEnemyHp').textContent = parseFloat(sliderEnemyHp.value).toFixed(1) + 'x';
+            document.getElementById('valBossHp').textContent = parseFloat(sliderBossHp.value).toFixed(1) + 'x';
+            document.getElementById('valBossRate').textContent = parseFloat(sliderBossRate.value).toFixed(1) + 'x';
+            document.getElementById('valBossThreshold').textContent = sliderBossThreshold.value;
+            btnDoubleDifficulty.textContent = `当前: ${difficulty.multiplier.toFixed(1)}x`;
+        }
+
+        function activateShield() {
+            if (!gameRunning || paused || gameOver) return;
+            if (shieldCharges <= 0) return;
+            if (activeShieldTime > 0) return;
+            
+            shieldCharges--;
+            activeShieldTime = getActiveShieldDuration();
+            if (shieldCharges < MAX_SHIELD_CHARGES && shieldRechargeTimer === 0) {
+                shieldRechargeTimer = 1;
+            }
+            updateUI();
+        }
+
+        function initEvents() {
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                
+                // ESC 键：切换暂停菜单/设置
+                if (key === 'escape') {
+                    e.preventDefault();
+                    if (gameRunning && !gameOver) {
+                        if (paused) {
+                            paused = false; hidePauseOverlay(); updateUI();
+                        } else {
+                            showPauseOverlay();
+                        }
+                    }
+                    return;
+                }
+                
+                if ([' ', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
+                if (!gameRunning || paused || gameOver) return;
+                
+                if (key === 'arrowleft' || key === 'a') keys.left = true;
+                if (key === 'arrowright' || key === 'd') keys.right = true;
+                if (key === ' ') keys.space = true;
+                if (key === 'e') activateShield();
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (key === 'arrowleft' || key === 'a') keys.left = false;
+                if (key === 'arrowright' || key === 'd') keys.right = false;
+                if (key === ' ') keys.space = false;
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && gameRunning && !paused && !gameOver) {
+                    e.preventDefault(); mouseShoot = true;
+                }
+            });
+            window.addEventListener('mouseup', (e) => { if (e.button === 0) mouseShoot = false; });
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            window.addEventListener('blur', () => { 
+                keys = { left: false, right: false, space: false }; 
+                mouseShoot = false;
+            });
+
+            adventureModeBtn.addEventListener('click', () => { resetGame('adventure'); hideOverlays(); });
+            endlessModeBtn.addEventListener('click', () => { resetGame('endless'); hideOverlays(); });
+            loadGameBtn.addEventListener('click', () => { if (!loadGame()) alert('没有找到存档或存档已损坏'); });
+            upgradeBtn.addEventListener('click', () => { showUpgradeOverlay(); });
+            difficultyBtn.addEventListener('click', () => {
+                startOverlay.classList.add('hidden');
+                difficultyOverlay.classList.remove('hidden');
+                updateDifficultyLabels();
+            });
+            closeUpgradeBtn.addEventListener('click', () => { showStartOverlay(); });
+            
+            closeDifficultyBtn.addEventListener('click', () => {
+                difficulty.spawnRate = parseFloat(sliderSpawnRate.value);
+                difficulty.enemySpeed = parseFloat(sliderEnemySpeed.value);
+                difficulty.enemyHp = parseFloat(sliderEnemyHp.value);
+                difficulty.bossHp = parseFloat(sliderBossHp.value);
+                difficulty.bossRate = parseFloat(sliderBossRate.value);
+                difficulty.bossThreshold = parseInt(sliderBossThreshold.value);
+                showStartOverlay();
+            });
+
+            sliderSpawnRate.addEventListener('input', updateDifficultyLabels);
+            sliderEnemySpeed.addEventListener('input', updateDifficultyLabels);
+            sliderEnemyHp.addEventListener('input', updateDifficultyLabels);
+            sliderBossHp.addEventListener('input', updateDifficultyLabels);
+            sliderBossRate.addEventListener('input', updateDifficultyLabels);
+            sliderBossThreshold.addEventListener('input', updateDifficultyLabels);
+
+            btnDoubleDifficulty.addEventListener('click', () => {
+                if (difficulty.multiplier < 10.0) {
+                    difficulty.multiplier = Math.min(10.0, difficulty.multiplier + 1.0);
+                    updateDifficultyLabels();
+                }
+            });
+
+            skillBtn.addEventListener('click', activateShield);
+            pauseBtn.addEventListener('click', () => {
+                if (!gameRunning || gameOver) return;
+                if (paused) { paused = false; hidePauseOverlay(); updateUI(); } 
+                else { showPauseOverlay(); }
+            });
+
+            restartBtn.addEventListener('click', () => {
+                if (gameRunning) { 
+                    if (confirm('确定要重新开始吗？当前进度将丢失。')) { resetGame(gameMode); hideOverlays(); }
+                } else { showStartOverlay(); }
+            });
+
+            resumeBtn.addEventListener('click', () => { paused = false; hidePauseOverlay(); updateUI(); });
+            saveAndExitBtn.addEventListener('click', () => {
+                if (saveGame()) { paused = false; hidePauseOverlay(); showStartOverlay(); }
+                else { alert('保存失败，请重试'); }
+            });
+
+            // 设置按钮切换设置面板
+            settingsBtn.addEventListener('click', () => {
+                settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
+            });
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function init() {
+            initEvents();
+            updateUI();
+            showStartOverlay();
+            updateSaveSlotUI();
+            gameLoop();
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
